@@ -15,30 +15,19 @@ https://titaniumsdk.com/api/titanium/ui/ipad/popover.html
 
 ## Usage
 
-	var pullViewControllerModule = require('de.marcbender.pullview');
+	var TiPopover = require('ti.popover');
+
+	var popover = TiPopover.createPopover({
+	    arrowDirection:TiPopover.POPOVER_ARROW_DIRECTION_DOWN,
+	    backgroundColor:'rgba(195,198,204,0.4)',
+	    contentView:SOME_VIEW
+	  });
 
 
-	var pullViewControll = pullViewControllerModule.createView({
-				top:0,
-				bottom:0,
-				left:0,
-				right:0,
-				parentWindow:WINDOW-OF-VIEW,
-				backgroundColor:'#ffffff',
-				topCornerRadius:18,
-				topCornerShadowOpacity:1.0,
-				topCornerShadowColor:'#000000',
-				topCornerShadowOffset: {x:0, y:2},
-				topCornerShadowRadius: 10,
-				pullBackgroundColor:'#d0d0d0',
-				extraBottomInset:ADDITIONAL-BOTTOM-INSET,
-				scrollingView:TABLEVIEW-OR-LISTVIEW-OR-SCROLLVIEW,
-				minHeight:MINHEIGHT-VISIBLE,
-				maxHeight:MAXHEIGHT-VISIBLE,
-				handleSize:30,
-				handleColor:'red',
-				width:Ti.UI.FILL,
-				height:Ti.UI.FILL,
-			});
-
-	    win.add(pullViewControll);
+	 popover.show({ 
+          view: REFERENCE_VIEW,
+          backgroundColor: 'rgba(0,0,0,0.2)',
+          blurBackground: true,
+          blurEffect: TiPopover.BLUR_EFFECT_STYLE_LIGHT,
+          animated: true
+        });	
