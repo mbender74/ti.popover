@@ -2,7 +2,7 @@
 
 ## Description
 
-Popover for iOS (Titanium Module)
+Popover for iOS (Titanium Module) + more .... see in the example
 
 same API like:
 https://titaniumsdk.com/api/titanium/ui/ipad/popover.html
