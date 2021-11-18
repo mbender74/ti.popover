@@ -47,7 +47,7 @@ static NSArray *popoverSequence;
 {
   if (self = [super init]) {
     closingCondition = [[NSCondition alloc] init];
-    directions = UIPopoverArrowDirectionAny;
+    directions = UIPopoverArrowDirectionUp;
     poWidth = TiDimensionUndefined;
     poHeight = TiDimensionUndefined;
   }
@@ -251,8 +251,7 @@ static NSArray *popoverSequence;
   isDismissing = YES;
   [closingCondition unlock];
 
-  TiThreadPerformOnMainThread(
-      ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
           [self->contentViewProxy windowWillClose];
           if (popoverBlurEffectView != nil){
               [UIView animateWithDuration:0.3 animations:^{
@@ -282,8 +281,7 @@ static NSArray *popoverSequence;
               [self fireEvent:@"closed" withObject:nil];
                                                     [self cleanup];
                                                   }];
-      },
-      NO);
+    });
 }
 
 #pragma mark Internal Methods
@@ -351,18 +349,26 @@ static NSArray *popoverSequence;
     [(TiWindowProxy *)contentViewProxy setIsManaged:YES];
     [(TiWindowProxy *)contentViewProxy open:nil];
     [(TiWindowProxy *)contentViewProxy gainFocus];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self updatePopoverNow];
         [contentViewProxy windowDidOpen];
     });
   } else {
-    [contentViewProxy windowWillOpen];
-    [contentViewProxy reposition];
-    [self updateContentSize];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-      [self updatePopoverNow];
-      [contentViewProxy windowDidOpen];
-    });
+      
+      [contentViewProxy windowWillOpen];
+        [contentViewProxy reposition];
+      
+      TiThreadPerformOnMainThread(
+          ^{
+              [self updateContentSize];
+          },
+          NO);
+      
+
+          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              [self updatePopoverNow];
+              [contentViewProxy windowDidOpen];
+          });
   }
 }
 
@@ -414,7 +420,7 @@ static NSArray *popoverSequence;
 
 - (void)updateContentSize
 {
-    NSLog(@"updateContentSize ");
+  //  NSLog(@"updateContentSize ");
 
   CGSize newSize = [self contentSize];
   [[self viewController] setPreferredContentSize:newSize];
@@ -423,6 +429,9 @@ static NSArray *popoverSequence;
 
 - (void)updatePopoverNow
 {
+  //  NSLog(@"updatePopoverNow ");
+
+
   // We're in the middle of playing cleanup while a hide() is happening.
   [closingCondition lock];
   if (isDismissing) {
@@ -430,7 +439,6 @@ static NSArray *popoverSequence;
     return;
   }
   [closingCondition unlock];
- 
 
   UIViewController *theController = [self viewController];
   [theController setModalPresentationStyle:UIModalPresentationPopover];
@@ -475,7 +483,7 @@ static NSArray *popoverSequence;
     
    // thePresentationController.view
     
-    //[contentViewProxy view].alpha = 0.0;
+   // [contentViewProxy view].alpha = 0.0;
     
     
         
@@ -491,14 +499,14 @@ static NSArray *popoverSequence;
         }
     [[TiApp app] controller].modalPresentationStyle = UIModalPresentationOverCurrentContext;
 
- //   [[[TiApp app] controller] presentViewController:theController animated:animated completion:^{
-//        [UIView animateWithDuration:0.05 animations:^{
+    [[[TiApp app] controller] presentViewController:theController animated:animated completion:^{
+//        [UIView animateWithDuration:0.1 animations:^{
 //            [contentViewProxy view].alpha = 1.0;
 //        }];
-   // }];
+    }];
     
 
-        [[TiApp app] showModalController:theController animated:animated];
+   //     [[TiApp app] showModalController:theController animated:animated];
         
    
     
@@ -522,9 +530,11 @@ static NSArray *popoverSequence;
 
 - (void)updateContentViewWithSafeAreaInsets:(NSValue *)insetsValue
 {
+   // NSLog(@"updateContentViewWithSafeAreaInsets ");
+
   TiThreadPerformOnMainThread(
       ^{
-          NSLog(@"updateContentViewWithSafeAreaInsets ");
+        //  NSLog(@"updateContentViewWithSafeAreaInsets ");
 
         UIViewController *viewController = [self viewController];
           self->contentViewProxy.view.frame = viewController.view.frame;
@@ -541,11 +551,18 @@ static NSArray *popoverSequence;
   if (sender == contentViewProxy) {
     if (viewController != nil) {
       CGSize newSize = [self contentSize];
+        
+     //   NSLog(@"proxyDidRelayout %f %f ",newSize.width,newSize.height);
+
+//        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
+//                [self updateContentSize];
+//        }
+        
       if (TiPopoverContentSize.width != newSize.width || TiPopoverContentSize.height != newSize.height){
         if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
-            
+
             NSLog(@"proxyDidRelayout ");
-            
+
           [self updateContentSize];
         }
       }
@@ -563,7 +580,6 @@ static NSArray *popoverSequence;
 //    popoverPresentationController.permittedArrowDirections = UIPopoverArrowDirectionAny;
 //    UIViewController *presentingController = [[self viewController] presentingViewController];
 //   popoverPresentationController.sourceView = [popoverView view];
-//
 //}
 
 
@@ -571,7 +587,7 @@ static NSArray *popoverSequence;
 
 - (void)prepareForPopoverPresentation:(UIPopoverPresentationController *)popoverPresentationController
 {
-    NSLog(@"prepareForPopoverPresentation ");
+  //  NSLog(@"prepareForPopoverPresentation ");
 
   [self updatePassThroughViews];
   if (popoverView != nil) {
@@ -654,11 +670,11 @@ static NSArray *popoverSequence;
 
     if (!UIEdgeInsetsEqualToEdgeInsets(oldInsets, newInsets)) {
       deviceRotated = NO;
-     // [self updateContentViewWithSafeAreaInsets:insetsValue];
+      [self updateContentViewWithSafeAreaInsets:insetsValue];
     } else if (deviceRotated) {
       // [self viewController]  need a bit of time to set its frame while rotating
       deviceRotated = NO;
-     // [self performSelector:@selector(updateContentViewWithSafeAreaInsets:) withObject:insetsValue afterDelay:.05];
+      [self performSelector:@selector(updateContentViewWithSafeAreaInsets:) withObject:insetsValue afterDelay:.05];
     }
   }
 }
@@ -729,7 +745,7 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
 }
 
 
-
+//
 -  (void)layoutSubviews {
     [super layoutSubviews];
 
@@ -739,7 +755,7 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
     CGFloat _top = 0.0;
     CGFloat _coordinate = 0.0;
     CGAffineTransform _rotation = CGAffineTransformIdentity;
-    
+
     switch (self.arrowDirection) {
         case UIPopoverArrowDirectionUp:
             _top += ArrowHeight;
