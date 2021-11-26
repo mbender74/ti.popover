@@ -83,9 +83,9 @@ static NSArray *popoverSequence;
 
 #pragma mark Public Constants
 
-- (NSNumber *)arrowDirection
+- (UIPopoverArrowDirection)arrowDirection
 {
-  return NUMINTEGER(directions);
+  return directions;
 }
 
 - (void)setArrowDirection:(id)args
@@ -96,12 +96,19 @@ static NSArray *popoverSequence;
 
   ENSURE_SINGLE_ARG(args, NSNumber)
   UIPopoverArrowDirection theDirection = [TiUtils intValue:args];
-  if ((theDirection != UIPopoverArrowDirectionAny) && (theDirection != UIPopoverArrowDirectionLeft)
-      && (theDirection != UIPopoverArrowDirectionRight) && (theDirection != UIPopoverArrowDirectionUp)
-      && (theDirection != UIPopoverArrowDirectionDown)) {
-    theDirection = UIPopoverArrowDirectionAny;
-  }
+//  if ((theDirection != UIPopoverArrowDirectionAny) && (theDirection != UIPopoverArrowDirectionLeft)
+//      && (theDirection != UIPopoverArrowDirectionRight) && (theDirection != UIPopoverArrowDirectionUp)
+//      && (theDirection != UIPopoverArrowDirectionDown)) {
+//    theDirection = UIPopoverArrowDirectionAny;
+//      NSLog(@"setArrowDirection DEFAULT:");
+//
+//  }
   directions = theDirection;
+    
+    
+NSLog(@"setArrowDirection:");
+
+    
 }
 
 - (void)setContentView:(id)value
@@ -444,7 +451,7 @@ static NSArray *popoverSequence;
   [theController setModalPresentationStyle:UIModalPresentationPopover];
   UIPopoverPresentationController *thePresentationController = [theController popoverPresentationController];
     [theController setModalTransitionStyle:UIModalTransitionStyleCrossDissolve];
-  thePresentationController.permittedArrowDirections = directions;
+  thePresentationController.permittedArrowDirections = [self arrowDirection];
   thePresentationController.delegate = self;
     
     if ([self valueForKey:@"backgroundColor"]){
@@ -601,6 +608,7 @@ static NSArray *popoverSequence;
 
     UIView *view = [popoverView view];
     if (view != nil && (view.window != nil)) {
+      popoverPresentationController.permittedArrowDirections = [self arrowDirection];
       popoverPresentationController.sourceView = view;
       popoverPresentationController.sourceRect = (CGRectEqualToRect(CGRectZero, popoverRect) ? [view bounds] : popoverRect);
       return;
@@ -609,6 +617,7 @@ static NSArray *popoverSequence;
 
   //Fell through.
   UIViewController *presentingController = [[self viewController] presentingViewController];
+  popoverPresentationController.permittedArrowDirections = [self arrowDirection];
   popoverPresentationController.sourceView = [presentingController view];
   popoverPresentationController.sourceRect = (CGRectEqualToRect(CGRectZero, popoverRect) ? CGRectMake(presentingController.view.bounds.size.width / 2, presentingController.view.bounds.size.height / 2, 1, 1) : popoverRect);
 }
@@ -733,6 +742,8 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
 }
 
 - (void)setArrowDirection:(UIPopoverArrowDirection)arrowDirection {
+    NSLog(@"setArrowDirection %@:",arrowDirection);
+
     _arrowDirection = arrowDirection;
 }
 
