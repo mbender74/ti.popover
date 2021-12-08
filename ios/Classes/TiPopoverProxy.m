@@ -106,9 +106,6 @@ static NSArray *popoverSequence;
   directions = theDirection;
     
     
-NSLog(@"setArrowDirection:");
-
-    
 }
 
 - (void)setContentView:(id)value
@@ -356,6 +353,13 @@ NSLog(@"setArrowDirection:");
     [(TiWindowProxy *)contentViewProxy setIsManaged:YES];
     [(TiWindowProxy *)contentViewProxy open:nil];
     [(TiWindowProxy *)contentViewProxy gainFocus];
+      
+      TiThreadPerformOnMainThread(
+          ^{
+              [self updateContentSize];
+          },
+          NO);
+      
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self updatePopoverNow];
         [contentViewProxy windowDidOpen];
@@ -561,14 +565,13 @@ NSLog(@"setArrowDirection:");
         
      //   NSLog(@"proxyDidRelayout %f %f ",newSize.width,newSize.height);
 
-//        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
-//                [self updateContentSize];
-//        }
+        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
+                [self updateContentSize];
+        }
         
       if (TiPopoverContentSize.width != newSize.width || TiPopoverContentSize.height != newSize.height){
         if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
 
-            NSLog(@"proxyDidRelayout ");
 
           [self updateContentSize];
         }
@@ -742,7 +745,6 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
 }
 
 - (void)setArrowDirection:(UIPopoverArrowDirection)arrowDirection {
-    NSLog(@"setArrowDirection %@:",arrowDirection);
 
     _arrowDirection = arrowDirection;
 }
