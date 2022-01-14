@@ -16,7 +16,7 @@
 //The iPadPopoverProxy should be seen more as like a window or such, because
 //The popover controller will contain the viewController, which has the view.
 //If the view had the logic, you get some nasty dependency loops.
-@interface TiPopoverProxy : TiProxy <UIPopoverControllerDelegate, UIPopoverPresentationControllerDelegate, TiProxyObserver> {
+@interface TiPopoverProxy : TiViewProxy <UIPopoverControllerDelegate, UIPopoverPresentationControllerDelegate, TiProxyObserver> {
   @private
   UIViewController *viewController;
   TiViewProxy *contentViewProxy;
@@ -33,9 +33,7 @@
   TiDimension poHeight;
   BOOL deviceRotated;
 }
-
 - (void)updatePopover:(NSNotification *)notification;
-
 @end
 
 
