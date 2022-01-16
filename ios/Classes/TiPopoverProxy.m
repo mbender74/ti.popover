@@ -236,11 +236,11 @@ static NSArray *popoverSequence;
   [tiPopOverCondition unlock];
   popoverInitialized = YES;
 
-  //TiThreadPerformOnMainThread(
-    //  ^{
+  TiThreadPerformOnMainThread(
+      ^{
         [self initAndShowPopOver];
-   //   },
-   //   NO);
+      },
+      YES);
 }
 
 - (void)hide:(id)args
@@ -353,14 +353,32 @@ static NSArray *popoverSequence;
     [(TiWindowProxy *)contentViewProxy setIsManaged:YES];
     [(TiWindowProxy *)contentViewProxy open:nil];
     [(TiWindowProxy *)contentViewProxy gainFocus];
-      [self updatePopoverNow];
-      [contentViewProxy windowDidOpen];
+      
+      TiThreadPerformOnMainThread(
+                ^{
+                    [self updateContentSize];
+                },
+                NO);
+      
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              [self updatePopoverNow];
+              [contentViewProxy windowDidOpen];
+          });
       
   } else {
       [contentViewProxy windowWillOpen];
       [contentViewProxy reposition];
-      [self updatePopoverNow];
-      [contentViewProxy windowDidOpen];
+      
+      TiThreadPerformOnMainThread(
+                ^{
+                    [self updateContentSize];
+                },
+                NO);
+      
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+              [self updatePopoverNow];
+              [contentViewProxy windowDidOpen];
+          });
   }
 }
 
@@ -431,16 +449,15 @@ static NSArray *popoverSequence;
     return;
   }
   [closingCondition unlock];
-  [self updateContentSize];
-
     
     [contentViewProxy view].alpha = 0.0;
 
     
     UIViewController *theController = [self viewController];
     [theController setModalPresentationStyle:UIModalPresentationPopover];
-    theController.modalTransitionStyle = UIModalTransitionStyleCoverVertical;
-    [theController setPreferredContentSize:[contentViewProxy view].frame.size];
+    theController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+  //  [theController setPreferredContentSize:[contentViewProxy view].frame.size];
+   //
     [theController popoverPresentationController].permittedArrowDirections = [self arrowDirection];
     [theController popoverPresentationController].delegate = self;
     
@@ -453,7 +470,7 @@ static NSArray *popoverSequence;
                
     if (animated){
         if (popoverBlurEffectView != nil){
-            [UIView animateWithDuration:0.2 delay: 0.0 options: UIViewAnimationOptionCurveEaseInOut
+            [UIView animateWithDuration:0.2 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                 animations:^{
                     popoverBlurEffectView.alpha = 1.0;
             }
@@ -461,7 +478,7 @@ static NSArray *popoverSequence;
         }
         if (popoverDarkenBackgroundView != nil){
            
-            [UIView animateWithDuration:0.2 delay: 0.0 options: UIViewAnimationOptionCurveEaseInOut
+            [UIView animateWithDuration:0.2 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                 animations:^{
                 popoverDarkenBackgroundView.alpha = 1.0;
             }
@@ -478,13 +495,14 @@ static NSArray *popoverSequence;
     }
     
     
-    [[TiApp app] showModalController:theController animated:animated];
-
+//    [[TiApp app] showModalController:theController animated:animated];
+    [[[TiApp app] controller] presentViewController:theController animated:animated completion:^{
+    }];
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 
         if (animated){
-            [UIView animateWithDuration:0.01 delay: 0.0 options: UIViewAnimationOptionCurveEaseInOut
+            [UIView animateWithDuration:0.001 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                 animations:^{
                 [contentViewProxy view].alpha = 1.0;
             }
@@ -536,17 +554,31 @@ static NSArray *popoverSequence;
 
 #pragma mark Delegate methods
 
+
 - (void)proxyDidRelayout:(id)sender
 {
   if (sender == contentViewProxy) {
     if (viewController != nil) {
       CGSize newSize = [self contentSize];
-      if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
-        [self updateContentSize];
+        
+     //   NSLog(@"proxyDidRelayout %f %f ",newSize.width,newSize.height);
+
+        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
+                [self updateContentSize];
+        }
+        
+      if (TiPopoverContentSize.width != newSize.width || TiPopoverContentSize.height != newSize.height){
+        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
+
+
+          [self updateContentSize];
+        }
       }
     }
   }
 }
+
+
 
 
 - (UIModalPresentationStyle)adaptivePresentationStyleForPresentationController: (UIPresentationController *)controller
