@@ -279,7 +279,7 @@ TiThreadPerformOnMainThread(
       ^{
         [self initAndShowPopOver];
       },
-      YES);
+   NO);
 }
 
 - (void)hide:(id)args
@@ -405,8 +405,8 @@ TiThreadPerformOnMainThread(
   } else {
       [contentViewProxy windowWillOpen];
       [contentViewProxy reposition];
-      [contentViewProxy layoutChildrenIfNeeded];
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+      //[contentViewProxy layoutChildrenIfNeeded];
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
          [self updatePopoverNow];
       });
       //[contentViewProxy windowDidOpen];
@@ -537,9 +537,11 @@ TiThreadPerformOnMainThread(
                 popoverDarkenBackgroundView.alpha = 1.0;
             }
         }
-        [[[TiApp app] controller] presentViewController:theController animated:animated completion:nil];
+            [[[TiApp app] controller] presentViewController:theController animated:animated completion:nil];
+            [(TiWindowProxy *)contentViewProxy windowDidOpen];
 
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+
                 if (animated){
                     [UIView animateWithDuration:0.001 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                         animations:^{
@@ -551,7 +553,6 @@ TiThreadPerformOnMainThread(
                 else {
                     [contentViewProxy view].alpha = 1.0;
                 }
-                [(TiWindowProxy *)contentViewProxy windowDidOpen];
 
             });
     }
@@ -581,22 +582,23 @@ TiThreadPerformOnMainThread(
                 popoverDarkenBackgroundView.alpha = 1.0;
             }
         }
-
         [[[TiApp app] controller] presentViewController:theController animated:NO completion:nil];
-
-        if (animated){
-            [UIView animateWithDuration:0.001 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
-                animations:^{
-                [contentViewProxy view].alpha = 1.0;
-            }
-            completion:^(BOOL finished) {
-            }];
-        }
-        else {
-            [contentViewProxy view].alpha = 1.0;
-        }
         [contentViewProxy windowDidOpen];
 
+        //dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+
+            if (animated){
+                [UIView animateWithDuration:0.01 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                    animations:^{
+                    [contentViewProxy view].alpha = 1.0;
+                }
+                completion:^(BOOL finished) {
+                }];
+            }
+            else {
+                [contentViewProxy view].alpha = 1.0;
+            }
+        //});
     }
 }
 
