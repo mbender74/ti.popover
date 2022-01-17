@@ -6,11 +6,18 @@
  * 
  * WARNING: This is generated code. Modify at your own risk and without support.
  */
-
 #import <TitaniumKit/TiViewController.h>
 #import <TitaniumKit/TiViewProxy.h>
+#import <TitaniumKit/TiProxy.h>
+#import <TitaniumKit/TitaniumKit.h>
+#ifdef USE_TI_UINAVIGATIONWINDOW
+#import "TiUINavigationWindowProxy.h"
+#import "TiUINavigationWindowInternal.h"
+#endif
+#import "TiWindowProxy+Addons.h"
 #import <UIKit/UIKit.h>
 #import <UIKit/UIPopoverBackgroundView.h>
+#import <TitaniumKit/TiViewTemplate.h>
 
 
 //The iPadPopoverProxy should be seen more as like a window or such, because

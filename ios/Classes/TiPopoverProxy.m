@@ -37,7 +37,8 @@ static NSArray *popoverSequence;
 - (NSArray *)keySequence
 {
   if (popoverSequence == nil) {
-      popoverSequence = [[NSArray arrayWithObjects:@"contentView", @"width", @"height", nil] retain];
+      //popoverSequence = [[NSArray arrayWithObjects:@"contentView", @"width", @"height", nil] retain];
+      popoverSequence = [[NSArray arrayWithObjects:@"contentView", nil] retain];
   }
   return popoverSequence;
 }
@@ -96,17 +97,21 @@ static NSArray *popoverSequence;
 
   ENSURE_SINGLE_ARG(args, NSNumber)
   UIPopoverArrowDirection theDirection = [TiUtils intValue:args];
-//  if ((theDirection != UIPopoverArrowDirectionAny) && (theDirection != UIPopoverArrowDirectionLeft)
-//      && (theDirection != UIPopoverArrowDirectionRight) && (theDirection != UIPopoverArrowDirectionUp)
-//      && (theDirection != UIPopoverArrowDirectionDown)) {
-//    theDirection = UIPopoverArrowDirectionAny;
-//      NSLog(@"setArrowDirection DEFAULT:");
-//
-//  }
   directions = theDirection;
     
-    
 }
+
+- (void)setHeight:(id)value
+{
+    poHeight = TiDimensionUndefined;
+
+}
+- (void)setWidth:(id)value
+{
+    poWidth = TiDimensionUndefined;
+
+}
+
 
 - (void)setContentView:(id)value
 {
@@ -119,9 +124,42 @@ static NSArray *popoverSequence;
   if (contentViewProxy != nil) {
       RELEASE_TO_NIL(contentViewProxy);
   }
+        
   contentViewProxy = [(TiViewProxy *)value retain];
+
+    if ([contentViewProxy isKindOfClass:[TiWindowProxy class]]) {
+       // if([contentViewProxy valueForKey:@"window"]){
+            if ([contentViewProxy layoutProperties]->width.type == TiDimensionTypeAutoSize) {
+                [contentViewProxy layoutProperties]->width = TiDimensionUndefined;
+                poWidth = TiDimensionUndefined;
+            }
+            else if ([contentViewProxy layoutProperties]->width.type == TiDimensionTypeAutoFill) {
+                [contentViewProxy layoutProperties]->width = TiDimensionAutoFill;
+                poWidth = TiDimensionUndefined;
+            }
+            else {
+                poWidth = TiDimensionUndefined;
+            }
+                        
+            
+            if ([contentViewProxy layoutProperties]->height.type == TiDimensionTypeAutoSize) {
+                [contentViewProxy layoutProperties]->height = TiDimensionUndefined;
+                poHeight = TiDimensionUndefined;
+            }
+            else if ([contentViewProxy layoutProperties]->height.type == TiDimensionTypeAutoFill) {
+                [contentViewProxy layoutProperties]->height = TiDimensionAutoFill;
+                poHeight = TiDimensionUndefined;
+            }
+            else {
+                poHeight = TiDimensionUndefined;
+            }
+      //  }
+    }
+
   [self replaceValue:contentViewProxy forKey:@"contentView" notification:NO];
 }
+
+
 
 - (void)setPassthroughViews:(id)args
 {
@@ -175,6 +213,7 @@ static NSArray *popoverSequence;
     [closingCondition wait];
   }
   [closingCondition unlock];
+  [self updateContentSize];
 
     
     if ([TiUtils boolValue:@"blurBackground" properties:args def:NO] == YES){
@@ -236,7 +275,7 @@ static NSArray *popoverSequence;
   [tiPopOverCondition unlock];
   popoverInitialized = YES;
 
-  TiThreadPerformOnMainThread(
+TiThreadPerformOnMainThread(
       ^{
         [self initAndShowPopOver];
       },
@@ -258,13 +297,13 @@ static NSArray *popoverSequence;
     dispatch_async(dispatch_get_main_queue(), ^{
           [self->contentViewProxy windowWillClose];
           if (popoverBlurEffectView != nil){
-              [UIView animateWithDuration:0.3 animations:^{
+              [UIView animateWithDuration:0.225 animations:^{
                   popoverBlurEffectView.alpha = 0.0;
                   
               }];
           }
           if (popoverDarkenBackgroundView != nil){
-              [UIView animateWithDuration:0.3 animations:^{
+              [UIView animateWithDuration:0.225 animations:^{
                   popoverDarkenBackgroundView.alpha = 0.0;
                 
               }];
@@ -350,35 +389,27 @@ static NSArray *popoverSequence;
         [(id<TiWindowProtocol>)theProxy resignFocus];
       }
     }
-    [(TiWindowProxy *)contentViewProxy setIsManaged:YES];
-    [(TiWindowProxy *)contentViewProxy open:nil];
-    [(TiWindowProxy *)contentViewProxy gainFocus];
       
-      TiThreadPerformOnMainThread(
-                ^{
-                    [self updateContentSize];
-                },
-                NO);
-      
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-              [self updatePopoverNow];
-              [contentViewProxy windowDidOpen];
-          });
-      
+      [(TiWindowProxy *)contentViewProxy setIsManaged:YES];
+      [(TiWindowProxy *)contentViewProxy windowWillOpen];
+
+      [(TiWindowProxy *)contentViewProxy open:nil];
+      [(TiWindowProxy *)contentViewProxy gainFocus];
+      [(TiWindowProxy *)contentViewProxy reposition];
+      [(TiWindowProxy *)contentViewProxy layoutChildrenIfNeeded];
+
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+         [self updatePopoverNow];
+      });
+
   } else {
       [contentViewProxy windowWillOpen];
       [contentViewProxy reposition];
-      
-      TiThreadPerformOnMainThread(
-                ^{
-                    [self updateContentSize];
-                },
-                NO);
-      
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-              [self updatePopoverNow];
-              [contentViewProxy windowDidOpen];
-          });
+      [contentViewProxy layoutChildrenIfNeeded];
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+         [self updatePopoverNow];
+      });
+      //[contentViewProxy windowDidOpen];
   }
 }
 
@@ -396,9 +427,9 @@ static NSArray *popoverSequence;
 #ifndef TI_USE_AUTOLAYOUT
   CGSize screenSize = [[UIScreen mainScreen] bounds].size;
   if (poWidth.type != TiDimensionTypeUndefined) {
-    [contentViewProxy layoutProperties]->width.type = poWidth.type;
-    [contentViewProxy layoutProperties]->width.value = poWidth.value;
-    poWidth = TiDimensionUndefined;
+          [contentViewProxy layoutProperties]->width.type = poWidth.type;
+          [contentViewProxy layoutProperties]->width.value = poWidth.value;
+          poWidth = TiDimensionUndefined;
   }
 
   if (poHeight.type != TiDimensionTypeUndefined) {
@@ -414,6 +445,20 @@ static NSArray *popoverSequence;
 #endif
 }
 
+
+- (void)updateContentSize
+{
+
+  CGSize newSize = [self contentSize];
+    
+  [[self viewController] setPreferredContentSize:newSize];
+  [contentViewProxy reposition];
+}
+
+
+
+
+
 - (void)updatePassThroughViews
 {
   NSArray *theViewProxies = [self valueForKey:@"passthroughViews"];
@@ -428,19 +473,10 @@ static NSArray *popoverSequence;
   [[[self viewController] popoverPresentationController] setPassthroughViews:theViews];
 }
 
-- (void)updateContentSize
-{
-  //  NSLog(@"updateContentSize ");
 
-  CGSize newSize = [self contentSize];
-  [[self viewController] setPreferredContentSize:newSize];
-  [contentViewProxy reposition];
-}
 
 - (void)updatePopoverNow
 {
-  //  NSLog(@"updatePopoverNow ");
-
 
   // We're in the middle of playing cleanup while a hide() is happening.
   [closingCondition lock];
@@ -449,7 +485,7 @@ static NSArray *popoverSequence;
     return;
   }
   [closingCondition unlock];
-    
+
     [contentViewProxy view].alpha = 0.0;
 
     
@@ -460,7 +496,8 @@ static NSArray *popoverSequence;
    //
     [theController popoverPresentationController].permittedArrowDirections = [self arrowDirection];
     [theController popoverPresentationController].delegate = self;
-    
+    [[TiApp app] controller].modalPresentationStyle = UIModalPresentationOverCurrentContext;
+
     if ([self valueForKey:@"backgroundColor"]){
         [[theController popoverPresentationController] setBackgroundColor:[[TiColor colorNamed:[self valueForKey:@"backgroundColor"]] _color]];
     }
@@ -468,38 +505,84 @@ static NSArray *popoverSequence;
         [theController popoverPresentationController].backgroundColor = [UIColor clearColor];
     }
                
-    if (animated){
-        if (popoverBlurEffectView != nil){
-            [UIView animateWithDuration:0.2 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
-                animations:^{
-                    popoverBlurEffectView.alpha = 1.0;
+    
+    
+
+    // [[TiApp app] showModalController:theController animated:animated];
+
+    
+    if ([contentViewProxy isKindOfClass:[TiWindowProxy class]]) {
+        if (animated){
+            if (popoverBlurEffectView != nil){
+                [UIView animateWithDuration:0.15 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                    animations:^{
+                        popoverBlurEffectView.alpha = 1.0;
+                }
+                completion:nil];
             }
-            completion:nil];
+            if (popoverDarkenBackgroundView != nil){
+               
+                [UIView animateWithDuration:0.15 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                    animations:^{
+                    popoverDarkenBackgroundView.alpha = 1.0;
+                }
+                completion:nil];
+            }
         }
-        if (popoverDarkenBackgroundView != nil){
-           
-            [UIView animateWithDuration:0.2 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
-                animations:^{
+        else {
+            if (popoverBlurEffectView != nil){
+                popoverBlurEffectView.alpha = 1.0;
+            }
+            if (popoverDarkenBackgroundView != nil){
                 popoverDarkenBackgroundView.alpha = 1.0;
             }
-            completion:nil];
         }
+        [[[TiApp app] controller] presentViewController:theController animated:animated completion:nil];
+
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if (animated){
+                    [UIView animateWithDuration:0.001 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                        animations:^{
+                        [contentViewProxy view].alpha = 1.0;
+                    }
+                    completion:^(BOOL finished) {
+                    }];
+                }
+                else {
+                    [contentViewProxy view].alpha = 1.0;
+                }
+                [(TiWindowProxy *)contentViewProxy windowDidOpen];
+
+            });
     }
     else {
-        if (popoverBlurEffectView != nil){
-            popoverBlurEffectView.alpha = 1.0;
+        if (animated){
+            if (popoverBlurEffectView != nil){
+                [UIView animateWithDuration:0.225 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                    animations:^{
+                        popoverBlurEffectView.alpha = 1.0;
+                }
+                completion:nil];
+            }
+            if (popoverDarkenBackgroundView != nil){
+               
+                [UIView animateWithDuration:0.225 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                    animations:^{
+                    popoverDarkenBackgroundView.alpha = 1.0;
+                }
+                completion:nil];
+            }
         }
-        if (popoverDarkenBackgroundView != nil){
-            popoverDarkenBackgroundView.alpha = 1.0;
+        else {
+            if (popoverBlurEffectView != nil){
+                popoverBlurEffectView.alpha = 1.0;
+            }
+            if (popoverDarkenBackgroundView != nil){
+                popoverDarkenBackgroundView.alpha = 1.0;
+            }
         }
-    }
-    
-    
-//    [[TiApp app] showModalController:theController animated:animated];
-    [[[TiApp app] controller] presentViewController:theController animated:animated completion:^{
-    }];
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [[[TiApp app] controller] presentViewController:theController animated:NO completion:nil];
 
         if (animated){
             [UIView animateWithDuration:0.001 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
@@ -512,13 +595,12 @@ static NSArray *popoverSequence;
         else {
             [contentViewProxy view].alpha = 1.0;
         }
-    });
+        [contentViewProxy windowDidOpen];
 
-    
-    
-   
-    
+    }
 }
+
+
 
 - (UIViewController *)viewController
 {
@@ -531,18 +613,19 @@ static NSArray *popoverSequence;
       viewController = [[TiViewController alloc] initWithViewProxy:contentViewProxy];
       [viewController.view addObserver:self forKeyPath:@"safeAreaInsets" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
     }
-    viewController.view.clipsToBounds = YES;
   }
+  viewController.view.clipsToBounds = YES;
   return viewController;
 }
 
+
+
+
+
 - (void)updateContentViewWithSafeAreaInsets:(NSValue *)insetsValue
 {
-   // NSLog(@"updateContentViewWithSafeAreaInsets ");
-
   TiThreadPerformOnMainThread(
       ^{
-        //  NSLog(@"updateContentViewWithSafeAreaInsets ");
 
         UIViewController *viewController = [self viewController];
           self->contentViewProxy.view.frame = viewController.view.frame;
@@ -550,9 +633,11 @@ static NSArray *popoverSequence;
         viewController.view.frame = CGRectMake(viewController.view.frame.origin.x + edgeInsets.left, viewController.view.frame.origin.y + edgeInsets.top, viewController.view.frame.size.width - edgeInsets.left - edgeInsets.right, viewController.view.frame.size.height - edgeInsets.top - edgeInsets.bottom);
       },
       NO);
+ 
 }
 
 #pragma mark Delegate methods
+
 
 
 - (void)proxyDidRelayout:(id)sender
@@ -561,22 +646,20 @@ static NSArray *popoverSequence;
     if (viewController != nil) {
       CGSize newSize = [self contentSize];
         
-     //   NSLog(@"proxyDidRelayout %f %f ",newSize.width,newSize.height);
-
         if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
                 [self updateContentSize];
         }
         
       if (TiPopoverContentSize.width != newSize.width || TiPopoverContentSize.height != newSize.height){
         if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
-
-
           [self updateContentSize];
         }
       }
     }
   }
 }
+
+
 
 
 
@@ -588,7 +671,6 @@ static NSArray *popoverSequence;
 
 - (void)prepareForPopoverPresentation:(UIPopoverPresentationController *)popoverPresentationController
 {
-  //  NSLog(@"prepareForPopoverPresentation ");
 
   [self updatePassThroughViews];
   if (popoverView != nil) {
@@ -786,6 +868,10 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
             _coordinate = ((self.frame.size.height / 2) + self.arrowOffset)- (ArrowHeight/2);
             _rotation = CGAffineTransformMakeRotation( M_PI_2 );
 
+            break;
+        case UIPopoverArrowDirectionAny:
+            break;
+        case UIPopoverArrowDirectionUnknown:
             break;
     }
 }
