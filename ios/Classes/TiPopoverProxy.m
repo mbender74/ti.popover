@@ -558,7 +558,7 @@ TiThreadPerformOnMainThread(
     else {
         if (animated){
             if (popoverBlurEffectView != nil){
-                [UIView animateWithDuration:0.225 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                [UIView animateWithDuration:0.125 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                     animations:^{
                         popoverBlurEffectView.alpha = 1.0;
                 }
@@ -566,7 +566,7 @@ TiThreadPerformOnMainThread(
             }
             if (popoverDarkenBackgroundView != nil){
                
-                [UIView animateWithDuration:0.225 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
+                [UIView animateWithDuration:0.125 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                     animations:^{
                     popoverDarkenBackgroundView.alpha = 1.0;
                 }
