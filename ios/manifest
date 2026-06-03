@@ -2,18 +2,18 @@
 # this is your module manifest and used by Titanium
 # during compilation, packaging, distribution, etc.
 #
-version: 1.0.8
+version: 1.0.9
 apiversion: 2
 architectures: arm64 x86_64
 mac: true
-description: ti.popover
+description: Popover for iOS with blur effect and background darkening support
 author: Marc Bender
 license: free for everyone, no license (code partly taken from Titanium SDK)
-copyright: Copyright (c) 2021 by Marc Bender
+copyright: Copyright (c) 2021-2025 by Marc Bender
 
 # these should not be edited
 name: ti.popover
 moduleid: ti.popover
 guid: 09a963f0-c30f-40eb-957a-1ca6851c53fb
 platform: iphone
-minsdk: 9.3.2.GA
+minsdk: 13.0.0.GA

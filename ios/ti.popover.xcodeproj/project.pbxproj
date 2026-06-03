@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -28,8 +28,6 @@
 		24DE9E1211C5FE74003F90F6 /* TiPopoverModuleAssets.m in Sources */ = {isa = PBXBuildFile; fileRef = 24DE9E1011C5FE74003F90F6 /* TiPopoverModuleAssets.m */; };
 		2CCBDD6726E3FADF0078F941 /* TiPopoverProxy.h in Headers */ = {isa = PBXBuildFile; fileRef = 2CCBDD6526E3FADF0078F941 /* TiPopoverProxy.h */; };
 		2CCBDD6826E3FADF0078F941 /* TiPopoverProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 2CCBDD6626E3FADF0078F941 /* TiPopoverProxy.m */; };
-		2CCBDD6C26E48DF70078F941 /* DDPopoverBackgroundView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2CCBDD6A26E48DF70078F941 /* DDPopoverBackgroundView.m */; };
-		2CCBDD6D26E48DF70078F941 /* DDPopoverBackgroundView.h in Headers */ = {isa = PBXBuildFile; fileRef = 2CCBDD6B26E48DF70078F941 /* DDPopoverBackgroundView.h */; };
 		AA747D9F0F9514B9006C5449 /* TiPopover_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = AA747D9E0F9514B9006C5449 /* TiPopover_Prefix.pch */; };
 		AACBBE4A0F95108600F1A2B1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AACBBE490F95108600F1A2B1 /* Foundation.framework */; };
 		B11E042C241AC5C100EFA7DC /* TitaniumKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B11E042B241AC5C100EFA7DC /* TitaniumKit.xcframework */; };
@@ -53,8 +51,6 @@
 		24DE9E1011C5FE74003F90F6 /* TiPopoverModuleAssets.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TiPopoverModuleAssets.m; path = Classes/TiPopoverModuleAssets.m; sourceTree = "<group>"; };
 		2CCBDD6526E3FADF0078F941 /* TiPopoverProxy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TiPopoverProxy.h; path = Classes/TiPopoverProxy.h; sourceTree = "<group>"; };
 		2CCBDD6626E3FADF0078F941 /* TiPopoverProxy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TiPopoverProxy.m; path = Classes/TiPopoverProxy.m; sourceTree = "<group>"; };
-		2CCBDD6A26E48DF70078F941 /* DDPopoverBackgroundView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = DDPopoverBackgroundView.m; path = Classes/DDPopoverBackgroundView.m; sourceTree = "<group>"; };
-		2CCBDD6B26E48DF70078F941 /* DDPopoverBackgroundView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DDPopoverBackgroundView.h; path = Classes/DDPopoverBackgroundView.h; sourceTree = "<group>"; };
 		AA747D9E0F9514B9006C5449 /* TiPopover_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TiPopover_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		AACBBE490F95108600F1A2B1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		B11E042B241AC5C100EFA7DC /* TitaniumKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = TitaniumKit.xcframework; path = "$(TITANIUM_SDK)/iphone/Frameworks/TitaniumKit.xcframework"; sourceTree = "<group>"; };
@@ -105,8 +101,6 @@
 		08FB77AEFE84172EC02AAC07 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				2CCBDD6B26E48DF70078F941 /* DDPopoverBackgroundView.h */,
-				2CCBDD6A26E48DF70078F941 /* DDPopoverBackgroundView.m */,
 				2CCBDD6526E3FADF0078F941 /* TiPopoverProxy.h */,
 				2CCBDD6626E3FADF0078F941 /* TiPopoverProxy.m */,
 				24DE9E0F11C5FE74003F90F6 /* TiPopoverModuleAssets.h */,
@@ -134,7 +128,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2CCBDD6726E3FADF0078F941 /* TiPopoverProxy.h in Headers */,
-				2CCBDD6D26E48DF70078F941 /* DDPopoverBackgroundView.h in Headers */,
 				AA747D9F0F9514B9006C5449 /* TiPopover_Prefix.pch in Headers */,
 				24DD6CF91134B3F500162E58 /* TiPopoverModule.h in Headers */,
 				24DE9E1111C5FE74003F90F6 /* TiPopoverModuleAssets.h in Headers */,
@@ -214,7 +207,6 @@
 			files = (
 				2CCBDD6826E3FADF0078F941 /* TiPopoverProxy.m in Sources */,
 				24DD6CFA1134B3F500162E58 /* TiPopoverModule.m in Sources */,
-				2CCBDD6C26E48DF70078F941 /* DDPopoverBackgroundView.m in Sources */,
 				24DE9E1211C5FE74003F90F6 /* TiPopoverModuleAssets.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -265,6 +257,8 @@
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				USER_HEADER_SEARCH_PATHS = "";
 				WARNING_CFLAGS = "-Wno-arc-performSelector-leaks";
 			};
@@ -303,6 +297,8 @@
 				PRODUCT_NAME = ti.popover;
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				USER_HEADER_SEARCH_PATHS = "";
 				WARNING_CFLAGS = "-Wno-arc-performSelector-leaks";
 			};
@@ -379,6 +375,8 @@
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2,6";
 				USER_HEADER_SEARCH_PATHS = "";
 			};
@@ -447,6 +445,8 @@
 				PRODUCT_NAME = ti.popover;
 				RUN_CLANG_STATIC_ANALYZER = NO;
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				TARGETED_DEVICE_FAMILY = "1,2,6";
 				USER_HEADER_SEARCH_PATHS = "";
 			};
