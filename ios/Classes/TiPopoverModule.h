@@ -18,6 +18,16 @@
 @property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_RIGHT;
 @property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_ANY;
 
+// Extended arrow direction constants — base direction + position modifier
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_UP_LEFT;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_UP_RIGHT;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_DOWN_LEFT;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_DOWN_RIGHT;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_LEFT_TOP;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_LEFT_BOTTOM;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_RIGHT_TOP;
+@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM;
+
 @property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_ULTRA_THIN_MATERIAL;
 @property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THIN_MATERIAL;
 @property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_MATERIAL;

@@ -299,6 +299,75 @@ static NSInteger transitionStyleFromValue(id value);
 
 static CGFloat flatValue(CGFloat value);
 
+// Extract the base UIPopoverArrowDirection from extended direction constants
+// e.g. _POPOVER_ARROW_DIRECTION_RIGHT_TOP -> UIPopoverArrowDirectionRight
+static UIPopoverArrowDirection baseArrowDirection(UIPopoverArrowDirection dir) {
+  switch (dir) {
+    case _POPOVER_ARROW_DIRECTION_UP_LEFT:
+    case _POPOVER_ARROW_DIRECTION_UP_RIGHT:
+      return UIPopoverArrowDirectionUp;
+    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT:
+    case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT:
+      return UIPopoverArrowDirectionDown;
+    case _POPOVER_ARROW_DIRECTION_LEFT_TOP:
+    case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM:
+      return UIPopoverArrowDirectionLeft;
+    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP:
+    case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM:
+      return UIPopoverArrowDirectionRight;
+    default:
+      return dir;
+  }
+}
+
+// Compute arrow offset for extended direction constants
+// Returns the offset to apply to the arrow point for TOP/BOTTOM/LEFT/RIGHT positioning
+static CGPoint arrowPositionOffsetForDirection(UIPopoverArrowDirection dir,
+                                                CGSize popoverSize,
+                                                CGFloat cornerRadius,
+                                                CGSize arrowSize) {
+  if (dir <= UIPopoverArrowDirectionAny) {
+    return CGPointZero;  // standard directions: no offset (centered)
+  }
+
+  switch (dir) {
+    case _POPOVER_ARROW_DIRECTION_UP_LEFT: {
+      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(-shift, 0);
+    }
+    case _POPOVER_ARROW_DIRECTION_UP_RIGHT: {
+      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(shift, 0);
+    }
+    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT: {
+      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(-shift, 0);
+    }
+    case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT: {
+      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(shift, 0);
+    }
+    case _POPOVER_ARROW_DIRECTION_LEFT_TOP: {
+      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(0, -shift);
+    }
+    case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM: {
+      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(0, shift);
+    }
+    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP: {
+      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(0, -shift);
+    }
+    case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM: {
+      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
+      return CGPointMake(0, shift);
+    }
+    default:
+      return CGPointZero;
+  }
+}
+
 #pragma mark - Bezier Path Drawing
 
 - (UIBezierPath *)popoverPathWithRect:(CGRect)popoverRect
@@ -656,10 +725,13 @@ static CGFloat flatValue(CGFloat value) {
   NSLog(@"[ti.popover] presentPopover: sourceRectInWindow=%@, containerRect=%@",
         NSStringFromCGRect(sourceRectInWindow), NSStringFromCGRect(containerRect));
 
+  // Get the base direction (handles extended directions like RIGHT_TOP)
+  UIPopoverArrowDirection baseDirection = baseArrowDirection(popoverArrowDirection);
+
   // Compute total popover size (content + arrow)
   CGFloat arrowExt = _showsArrow ? _arrowSize.height : 0;
   CGSize popoverSize;
-  switch (popoverArrowDirection) {
+  switch (baseDirection) {
     case UIPopoverArrowDirectionUp:
     case UIPopoverArrowDirectionDown:
       popoverSize = CGSizeMake(contentSize.width, contentSize.height + arrowExt);
@@ -675,7 +747,7 @@ static CGFloat flatValue(CGFloat value) {
 
   // Compute arrow point (where the arrow tip touches the source rect)
   CGPoint arrowPoint;
-  switch (popoverArrowDirection) {
+  switch (baseDirection) {
     case UIPopoverArrowDirectionUp:
       arrowPoint = CGPointMake(CGRectGetMidX(sourceRectInWindow), CGRectGetMaxY(sourceRectInWindow));
       break;
@@ -693,9 +765,13 @@ static CGFloat flatValue(CGFloat value) {
       break;
   }
 
+  // Apply position offset for extended directions (TOP, BOTTOM, LEFT, RIGHT)
+  CGPoint posOffset = arrowPositionOffsetForDirection(popoverArrowDirection, popoverSize, _cornerRadius, _arrowSize);
+  arrowPoint = CGPointMake(arrowPoint.x + posOffset.x, arrowPoint.y + posOffset.y);
+
   // Compute popover origin
   CGPoint popoverOrigin;
-  switch (popoverArrowDirection) {
+  switch (baseDirection) {
     case UIPopoverArrowDirectionUp:
       popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y);
       break;
@@ -729,7 +805,7 @@ static CGFloat flatValue(CGFloat value) {
   // Compute content rect (inside popover, offset by arrow)
   CGFloat arrowOffset = _showsArrow ? _arrowSize.height : 0;
   CGRect contentRect;
-  switch (popoverArrowDirection) {
+  switch (baseDirection) {
     case UIPopoverArrowDirectionUp:
       contentRect = CGRectMake(0, arrowOffset, contentSize.width, contentSize.height);
       break;
@@ -760,7 +836,7 @@ static CGFloat flatValue(CGFloat value) {
     CGFloat maxX = popoverSize.width - minX;
     CGFloat minY = _cornerRadius + _arrowSize.width / 2;
     CGFloat maxY = popoverSize.height - minY;
-    switch (popoverArrowDirection) {
+    switch (baseDirection) {
       case UIPopoverArrowDirectionUp:
       case UIPopoverArrowDirectionDown:
         // For vertical arrows, only clamp x (horizontal position)
@@ -810,7 +886,7 @@ static CGFloat flatValue(CGFloat value) {
   // Generate bezier path for the popover shape
   UIBezierPath *popoverPath = [self popoverPathWithRect:popoverRect
                                              arrowPoint:arrowPointInPopover
-                                         arrowDirection:popoverArrowDirection
+                                         arrowDirection:baseDirection
                                             contentRect:contentRect];
 
   // Apply mask
@@ -880,7 +956,7 @@ static CGFloat flatValue(CGFloat value) {
 
   // Add arrow offset in the arrow direction
   if (_showsArrow) {
-    switch (popoverArrowDirection) {
+    switch (baseDirection) {
       case UIPopoverArrowDirectionUp:
         contentInsets.top += _arrowSize.height;
         break;
@@ -946,7 +1022,7 @@ static CGFloat flatValue(CGFloat value) {
   if (animated) {
     if (_showsArrow && _transitionStyle == 0) {
       // Scale transition with anchor at arrow point
-      CGPoint anchorPoint = [self anchorPointForArrowDirection:popoverArrowDirection arrowPoint:arrowPointInPopover popoverSize:popoverSize];
+      CGPoint anchorPoint = [self anchorPointForArrowDirection:baseDirection arrowPoint:arrowPointInPopover popoverSize:popoverSize];
       CGPoint oldOrigin = _popoverContainerView.frame.origin;
       _popoverContainerView.layer.anchorPoint = anchorPoint;
       _popoverContainerView.layer.position = CGPointMake(
@@ -961,7 +1037,7 @@ static CGFloat flatValue(CGFloat value) {
     } else if (_transitionStyle == 2) {
       // Translate transition
       _popoverContainerView.alpha = 0.0;
-      CGPoint offset = [self translateOffsetForArrowDirection:popoverArrowDirection];
+      CGPoint offset = [self translateOffsetForArrowDirection:baseDirection];
       _popoverContainerView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
     }
     // transitionStyle == 3 (None): no initial setup needed
@@ -1090,7 +1166,7 @@ static CGFloat flatValue(CGFloat value) {
                       case 1: // Fade — already handled by alpha
                           break;
                       case 2: { // Translate
-                          CGPoint offset = [self translateOffsetForArrowDirection:self->popoverArrowDirection];
+                          CGPoint offset = [self translateOffsetForArrowDirection:baseArrowDirection(self->popoverArrowDirection)];
                           self->_popoverContainerView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
                           break;
                       }

@@ -26,6 +26,16 @@
 #define TI_POPOVER_SHADOW_RADIUS 5.0f
 #define TI_POPOVER_SHADOW_OPACITY 0.3f
 
+// Extended arrow direction constant values (used internally, exposed via module properties)
+#define _POPOVER_ARROW_DIRECTION_UP_LEFT       100
+#define _POPOVER_ARROW_DIRECTION_UP_RIGHT      101
+#define _POPOVER_ARROW_DIRECTION_DOWN_LEFT     102
+#define _POPOVER_ARROW_DIRECTION_DOWN_RIGHT    103
+#define _POPOVER_ARROW_DIRECTION_LEFT_TOP      104
+#define _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM   105
+#define _POPOVER_ARROW_DIRECTION_RIGHT_TOP     106
+#define _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM  107
+
 @interface TiPopoverProxy : TiProxy <TiProxyObserver> {
   @private
   UIViewController *viewController;
