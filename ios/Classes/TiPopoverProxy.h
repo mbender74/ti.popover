@@ -39,6 +39,7 @@
   TiDimension poWidth;
   TiDimension poHeight;
   BOOL deviceRotated;
+  UIPopoverArrowDirection popoverArrowDirection;
 }
 - (void)updatePopover:(NSNotification *)notification;
 @end

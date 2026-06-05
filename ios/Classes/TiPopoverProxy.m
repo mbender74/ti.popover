@@ -24,6 +24,10 @@ static NSCondition *tiPopOverCondition;
 static BOOL tiCurrentlyDisplaying = NO;
 TiPopoverProxy *currentTiPopover;
 
+// Arrow dimensions from TiPopoverBackgroundView — needed in contentSize before the inner class is defined.
+#define TI_POPOVER_ARROW_BASE 30.0f
+#define TI_POPOVER_ARROW_HEIGHT 15.0f
+
 UIVisualEffectView *popoverBlurEffectView;
 UIView *popoverDarkenBackgroundView;
 CGSize TiPopoverContentSize;
@@ -351,6 +355,7 @@ TiThreadPerformOnMainThread(
   [contentViewProxy windowWillClose];
 
   popoverInitialized = NO;
+  popoverArrowDirection = UIPopoverArrowDirectionUnknown;
  // [self fireEvent:@"hide" withObject:nil]; //Checking for listeners are done by fireEvent anyways.
   [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillChangeStatusBarOrientationNotification object:nil];
   [contentViewProxy windowDidClose];
@@ -389,7 +394,7 @@ TiThreadPerformOnMainThread(
         [(id<TiWindowProtocol>)theProxy resignFocus];
       }
     }
-      
+
       [(TiWindowProxy *)contentViewProxy setIsManaged:YES];
       [(TiWindowProxy *)contentViewProxy windowWillOpen];
 
@@ -397,6 +402,9 @@ TiThreadPerformOnMainThread(
       [(TiWindowProxy *)contentViewProxy gainFocus];
       [(TiWindowProxy *)contentViewProxy reposition];
       [(TiWindowProxy *)contentViewProxy layoutChildrenIfNeeded];
+
+      // Predict arrow direction based on sourceView position BEFORE contentSize is called.
+      self->popoverArrowDirection = [self predictArrowDirectionForPopoverView:popoverView];
 
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
          [self updatePopoverNow];
@@ -406,11 +414,49 @@ TiThreadPerformOnMainThread(
       [contentViewProxy windowWillOpen];
       [contentViewProxy reposition];
       //[contentViewProxy layoutChildrenIfNeeded];
+
+      // Predict arrow direction based on sourceView position BEFORE contentSize is called.
+      self->popoverArrowDirection = [self predictArrowDirectionForPopoverView:popoverView];
+
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
          [self updatePopoverNow];
       });
       //[contentViewProxy windowDidOpen];
   }
+}
+
+// Predicts the arrow direction based on where the source view sits in its window.
+// Arrow points UP when source is in the lower half (popover appears above).
+// Arrow points DOWN when source is in the upper half (popover appears below).
+- (UIPopoverArrowDirection)predictArrowDirectionForPopoverView:(id)viewProxy
+{
+  if (!viewProxy) {
+    return UIPopoverArrowDirectionAny;
+  }
+
+  // Get the source view's frame in window coordinates.
+  UIView *sourceView = nil;
+  if ([viewProxy isKindOfClass:[TiViewProxy class]]) {
+    sourceView = [(TiViewProxy *)viewProxy valueForKey:@"view"];
+  } else if ([viewProxy isKindOfClass:[TiProxy class]]) {
+    sourceView = [(TiProxy *)viewProxy valueForKey:@"view"];
+  }
+
+  if (!sourceView || !sourceView.superview) {
+    return UIPopoverArrowDirectionAny;
+  }
+
+  // Convert to window coordinates.
+  CGRect sourceFrame = [sourceView.superview convertRect:sourceView.frame toView:nil];
+  CGFloat windowHeight = sourceView.superview.bounds.size.height;
+  CGFloat sourceCenterY = CGRectGetMidY(sourceFrame);
+
+  // If source is in the lower half, arrow points UP (popover above source).
+  if (sourceCenterY > windowHeight * 0.5) {
+    return UIPopoverArrowDirectionUp;
+  }
+  // If source is in the upper half, arrow points DOWN (popover below source).
+  return UIPopoverArrowDirectionDown;
 }
 
 - (void)updatePopover:(NSNotification *)notification;
@@ -439,6 +485,51 @@ TiThreadPerformOnMainThread(
   }
 
  TiPopoverContentSize = SizeConstraintViewWithSizeAddingResizing([contentViewProxy layoutProperties], contentViewProxy, screenSize, NULL);
+
+  // Add margin insets when explicit dimensions AND margins are both set,
+  // so the popover is large enough to show the margins around the content.
+  LayoutConstraint *cp = [contentViewProxy layoutProperties];
+  CGFloat extraWidth = 0;
+  CGFloat extraHeight = 0;
+
+  if (cp->width.type == TiDimensionTypeDip) {
+    if (!TiDimensionIsUndefined(cp->left) && TiDimensionIsDip(cp->left)) {
+      extraWidth += TiDimensionCalculateValue(cp->left, screenSize.width);
+    }
+    if (!TiDimensionIsUndefined(cp->right) && TiDimensionIsDip(cp->right)) {
+      extraWidth += TiDimensionCalculateValue(cp->right, screenSize.width);
+    }
+  }
+
+  if (cp->height.type == TiDimensionTypeDip) {
+    if (!TiDimensionIsUndefined(cp->top) && TiDimensionIsDip(cp->top)) {
+      extraHeight += TiDimensionCalculateValue(cp->top, screenSize.height);
+    }
+    if (!TiDimensionIsUndefined(cp->bottom) && TiDimensionIsDip(cp->bottom)) {
+      extraHeight += TiDimensionCalculateValue(cp->bottom, screenSize.height);
+    }
+  }
+
+  // Add arrow dimensions so the popover is large enough for the content + margins + arrow.
+  // The arrow direction was predicted in initAndShowPopOver, so we add only in that direction.
+  switch (popoverArrowDirection) {
+    case UIPopoverArrowDirectionUp:
+    case UIPopoverArrowDirectionDown:
+      extraHeight += TI_POPOVER_ARROW_HEIGHT;
+      break;
+    case UIPopoverArrowDirectionLeft:
+    case UIPopoverArrowDirectionRight:
+      extraWidth += TI_POPOVER_ARROW_BASE;
+      break;
+    default:
+      // Unknown — add to height as fallback.
+      extraHeight += TI_POPOVER_ARROW_HEIGHT;
+      break;
+  }
+
+  TiPopoverContentSize.width += extraWidth;
+  TiPopoverContentSize.height += extraHeight;
+
   return TiPopoverContentSize;
 #else
   return CGSizeZero;
@@ -630,12 +721,60 @@ TiThreadPerformOnMainThread(
       ^{
 
         UIViewController *viewController = [self viewController];
-          self->contentViewProxy.view.frame = viewController.view.frame;
         UIEdgeInsets edgeInsets = [insetsValue UIEdgeInsetsValue];
-        viewController.view.frame = CGRectMake(viewController.view.frame.origin.x + edgeInsets.left, viewController.view.frame.origin.y + edgeInsets.top, viewController.view.frame.size.width - edgeInsets.left - edgeInsets.right, viewController.view.frame.size.height - edgeInsets.top - edgeInsets.bottom);
+
+#ifndef TI_USE_AUTOLAYOUT
+        // Add margin insets from layout constraints so the contentView is offset
+        // within the popover, matching the extra space added to contentSize.
+        LayoutConstraint *cp = [contentViewProxy layoutProperties];
+        CGSize screenSize = [[UIScreen mainScreen] bounds].size;
+
+        if (TiDimensionIsDip(cp->left)) {
+            edgeInsets.left += TiDimensionCalculateValue(cp->left, screenSize.width);
+        }
+        if (TiDimensionIsDip(cp->top)) {
+            edgeInsets.top += TiDimensionCalculateValue(cp->top, screenSize.height);
+        }
+        if (TiDimensionIsDip(cp->right)) {
+            edgeInsets.right += TiDimensionCalculateValue(cp->right, screenSize.width);
+        }
+        if (TiDimensionIsDip(cp->bottom)) {
+            edgeInsets.bottom += TiDimensionCalculateValue(cp->bottom, screenSize.height);
+        }
+
+        // Add arrow offset only in the actual arrow direction.
+        UIPopoverArrowDirection arrowDir = self->popoverArrowDirection;
+        switch (arrowDir) {
+            case UIPopoverArrowDirectionUp:
+                edgeInsets.top += TI_POPOVER_ARROW_HEIGHT;
+                break;
+            case UIPopoverArrowDirectionDown:
+                edgeInsets.bottom += TI_POPOVER_ARROW_HEIGHT;
+                break;
+            case UIPopoverArrowDirectionLeft:
+                edgeInsets.left += TI_POPOVER_ARROW_BASE;
+                break;
+            case UIPopoverArrowDirectionRight:
+                edgeInsets.right += TI_POPOVER_ARROW_BASE;
+                break;
+            default:
+                // Unknown — add to top as fallback.
+                edgeInsets.top += TI_POPOVER_ARROW_HEIGHT;
+                break;
+        }
+#endif
+
+        // Position the contentView within the popover with proper insets.
+        CGRect containerBounds = viewController.view.bounds;
+        self->contentViewProxy.view.frame = CGRectMake(
+            edgeInsets.left,
+            edgeInsets.top,
+            containerBounds.size.width - edgeInsets.left - edgeInsets.right,
+            containerBounds.size.height - edgeInsets.top - edgeInsets.bottom
+        );
       },
       NO);
- 
+
 }
 
 #pragma mark Delegate methods
@@ -698,6 +837,27 @@ TiThreadPerformOnMainThread(
   popoverPresentationController.permittedArrowDirections = [self arrowDirection];
   popoverPresentationController.sourceView = [presentingController view];
   popoverPresentationController.sourceRect = (CGRectEqualToRect(CGRectZero, popoverRect) ? CGRectMake(presentingController.view.bounds.size.width / 2, presentingController.view.bounds.size.height / 2, 1, 1) : popoverRect);
+}
+
+- (void)presentationTransitionDidEnd:(BOOL)completed
+{
+  if (!completed) {
+    return;
+  }
+
+  popoverInitialized = YES;
+
+  // After presentation is complete, read the actual arrow direction and re-position the contentView.
+  UIPopoverArrowDirection actualArrowDir = [[[self viewController] popoverPresentationController] arrowDirection];
+  self->popoverArrowDirection = actualArrowDir;
+
+#ifndef TI_USE_AUTOLAYOUT
+  // Re-position the contentView with the correct arrow offset.
+  UIViewController *vc = [self viewController];
+  UIEdgeInsets safeAreaInsets = vc.view.safeAreaInsets;
+  NSValue *insetsValue = [NSValue valueWithUIEdgeInsets:safeAreaInsets];
+  [self updateContentViewWithSafeAreaInsets:insetsValue];
+#endif
 }
 
 - (BOOL)popoverPresentationControllerShouldDismissPopover:(UIPopoverPresentationController *)popoverPresentationController
