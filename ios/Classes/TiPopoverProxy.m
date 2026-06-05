@@ -320,56 +320,6 @@ static UIPopoverArrowDirection baseArrowDirection(UIPopoverArrowDirection dir) {
   }
 }
 
-// Compute arrow offset for extended direction constants
-// Returns the offset to apply to the arrow point for TOP/BOTTOM/LEFT/RIGHT positioning
-static CGPoint arrowPositionOffsetForDirection(UIPopoverArrowDirection dir,
-                                                CGSize popoverSize,
-                                                CGFloat cornerRadius,
-                                                CGSize arrowSize) {
-  if (dir <= UIPopoverArrowDirectionAny) {
-    return CGPointZero;  // standard directions: no offset (centered)
-  }
-
-  switch (dir) {
-    case _POPOVER_ARROW_DIRECTION_UP_LEFT: {
-      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(-shift, 0);
-    }
-    case _POPOVER_ARROW_DIRECTION_UP_RIGHT: {
-      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(shift, 0);
-    }
-    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT: {
-      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(-shift, 0);
-    }
-    case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT: {
-      CGFloat shift = (popoverSize.width - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(shift, 0);
-    }
-    case _POPOVER_ARROW_DIRECTION_LEFT_TOP: {
-      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(0, -shift);
-    }
-    case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM: {
-      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(0, shift);
-    }
-    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP: {
-      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(0, -shift);
-    }
-    case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM: {
-      CGFloat shift = (popoverSize.height - arrowSize.width - cornerRadius * 2) * 0.25;
-      return CGPointMake(0, shift);
-    }
-    default:
-      return CGPointZero;
-  }
-}
-
-#pragma mark - Bezier Path Drawing
-
 - (UIBezierPath *)popoverPathWithRect:(CGRect)popoverRect
                             arrowPoint:(CGPoint)arrowPoint
                          arrowDirection:(UIPopoverArrowDirection)direction
@@ -534,15 +484,14 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)show:(id)args
 {
-  NSLog(@"[ti.popover] show: called — popoverInitialized=%d, tiCurrentlyDisplaying=%d, currentTiPopover=%p, self=%p",
-        popoverInitialized, tiCurrentlyDisplaying, currentTiPopover, self);
+  //NSLog(@"[ti.popover] show: called — popoverInitialized=%d, tiCurrentlyDisplaying=%d, currentTiPopover=%p, self=%p",
 
   if (tiPopOverCondition == nil) {
     tiPopOverCondition = [[NSCondition alloc] init];
   }
 
   if (popoverInitialized) {
-    NSLog(@"[ti.popover] show: popover already initialized — ignoring duplicate call");
+    //NSLog(@"[ti.popover] show: popover already initialized — ignoring duplicate call");
     DebugLog(@"Popover is already showing. Ignoring call");
     return;
   }
@@ -578,14 +527,14 @@ static CGFloat flatValue(CGFloat value) {
   }
 
   [tiPopOverCondition lock];
-  NSLog(@"[ti.popover] show: checking tiCurrentlyDisplaying=%d, currentTiPopover=%p", tiCurrentlyDisplaying, currentTiPopover);
+  //NSLog(@"[ti.popover] show: checking tiCurrentlyDisplaying=%d, currentTiPopover=%p", tiCurrentlyDisplaying, currentTiPopover);
   if (tiCurrentlyDisplaying) {
-    NSLog(@"[ti.popover] show: another popover is showing — hiding it first");
+    //NSLog(@"[ti.popover] show: another popover is showing — hiding it first");
     [currentTiPopover hide:nil];
     [tiPopOverCondition wait];
   }
   tiCurrentlyDisplaying = YES;
-  NSLog(@"[ti.popover] show: setting tiCurrentlyDisplaying=YES, self=%p", self);
+  //NSLog(@"[ti.popover] show: setting tiCurrentlyDisplaying=YES, self=%p", self);
   [tiPopOverCondition unlock];
   popoverInitialized = YES;
 
@@ -654,10 +603,10 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)presentPopover
 {
-  NSLog(@"[ti.popover] presentPopover — self=%p, popoverInitialized=%d", self, popoverInitialized);
+  //NSLog(@"[ti.popover] presentPopover — self=%p, popoverInitialized=%d", self, popoverInitialized);
   deviceRotated = NO;
   currentTiPopover = self;
-  NSLog(@"[ti.popover] presentPopover: contentViewProxy=%p, popoverView=%p", contentViewProxy, popoverView);
+  //NSLog(@"[ti.popover] presentPopover: contentViewProxy=%p, popoverView=%p", contentViewProxy, popoverView);
   [contentViewProxy setProxyObserver:self];
 
   // Get source view and its frame in window coordinates
@@ -720,10 +669,8 @@ static CGFloat flatValue(CGFloat value) {
                                                       sourceRect:sourceRectInWindow
                                                    containerRect:containerRect];
 
-  NSLog(@"[ti.popover] presentPopover: contentSize=(%.1f, %.1f), arrowDirection=%ld, showsArrow=%d, showsDimBackground=%d",
-        contentSize.width, contentSize.height, (long)popoverArrowDirection, _showsArrow, _showsDimBackground);
-  NSLog(@"[ti.popover] presentPopover: sourceRectInWindow=%@, containerRect=%@",
-        NSStringFromCGRect(sourceRectInWindow), NSStringFromCGRect(containerRect));
+  //NSLog(@"[ti.popover] presentPopover: contentSize=(%.1f, %.1f), arrowDirection=%ld, showsArrow=%d, showsDimBackground=%d",
+  //NSLog(@"[ti.popover] presentPopover: sourceRectInWindow=%@, containerRect=%@",
 
   // Get the base direction (handles extended directions like RIGHT_TOP)
   UIPopoverArrowDirection baseDirection = baseArrowDirection(popoverArrowDirection);
@@ -765,13 +712,10 @@ static CGFloat flatValue(CGFloat value) {
       break;
   }
 
-  // Apply position offset for extended directions (TOP, BOTTOM, LEFT, RIGHT)
-  CGPoint posOffset = arrowPositionOffsetForDirection(popoverArrowDirection, popoverSize, _cornerRadius, _arrowSize);
-  arrowPoint = CGPointMake(arrowPoint.x + posOffset.x, arrowPoint.y + posOffset.y);
-
-  // Compute popover origin
+  // Compute popover origin: standard=centered, extended=corner-anchored
+  CGFloat arrowEdgeOffset = _cornerRadius + _arrowSize.width / 2 + 5.0;
   CGPoint popoverOrigin;
-  switch (baseDirection) {
+  switch (popoverArrowDirection) {
     case UIPopoverArrowDirectionUp:
       popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y);
       break;
@@ -784,14 +728,57 @@ static CGFloat flatValue(CGFloat value) {
     case UIPopoverArrowDirectionRight:
       popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - popoverSize.height / 2);
       break;
+    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - arrowEdgeOffset);
+      break;
+    case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - (popoverSize.height - arrowEdgeOffset));
+      break;
+    case _POPOVER_ARROW_DIRECTION_LEFT_TOP:
+      popoverOrigin = CGPointMake(arrowPoint.x, arrowPoint.y - arrowEdgeOffset);
+      break;
+    case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM:
+      popoverOrigin = CGPointMake(arrowPoint.x, arrowPoint.y - (popoverSize.height - arrowEdgeOffset));
+      break;
+    case _POPOVER_ARROW_DIRECTION_UP_LEFT:
+      popoverOrigin = CGPointMake(arrowPoint.x - arrowEdgeOffset, arrowPoint.y);
+      break;
+    case _POPOVER_ARROW_DIRECTION_UP_RIGHT:
+      popoverOrigin = CGPointMake(arrowPoint.x - (popoverSize.width - arrowEdgeOffset), arrowPoint.y);
+      break;
+    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT:
+      popoverOrigin = CGPointMake(arrowPoint.x - arrowEdgeOffset, arrowPoint.y - popoverSize.height);
+      break;
+    case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT:
+      popoverOrigin = CGPointMake(arrowPoint.x - (popoverSize.width - arrowEdgeOffset), arrowPoint.y - popoverSize.height);
+      break;
     default:
       popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y);
       break;
   }
 
-  // Clamp popover origin within container bounds (with safe area consideration)
+  // Clamp within container
   UIEdgeInsets safeInsets = _containerSafeAreaInsets;
   CGRect safeContainerRect = UIEdgeInsetsInsetRect(containerRect, safeInsets);
+
+  // Extended: fall back to centered if clamped significantly
+  if (popoverArrowDirection > UIPopoverArrowDirectionAny) {
+    CGFloat cx = popoverOrigin.x, cy = popoverOrigin.y;
+    cx = MAX(cx, safeContainerRect.origin.x);
+    cy = MAX(cy, safeContainerRect.origin.y);
+    cx = MIN(cx, CGRectGetMaxX(safeContainerRect) - popoverSize.width);
+    cy = MIN(cy, CGRectGetMaxY(safeContainerRect) - popoverSize.height);
+    if (fabs(cx - popoverOrigin.x) > 10 || fabs(cy - popoverOrigin.y) > 10) {
+      switch (baseDirection) {
+        case UIPopoverArrowDirectionUp: popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y); break;
+        case UIPopoverArrowDirectionDown: popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y - popoverSize.height); break;
+        case UIPopoverArrowDirectionLeft: popoverOrigin = CGPointMake(arrowPoint.x, arrowPoint.y - popoverSize.height / 2); break;
+        case UIPopoverArrowDirectionRight: popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - popoverSize.height / 2); break;
+        default: break;
+      }
+    }
+  }
+
   popoverOrigin.x = MAX(popoverOrigin.x, safeContainerRect.origin.x);
   popoverOrigin.y = MAX(popoverOrigin.y, safeContainerRect.origin.y);
   popoverOrigin.x = MIN(popoverOrigin.x, CGRectGetMaxX(safeContainerRect) - popoverSize.width);
@@ -799,8 +786,7 @@ static CGFloat flatValue(CGFloat value) {
 
   CGRect popoverRect = {popoverOrigin, popoverSize};
 
-  NSLog(@"[ti.popover] presentPopover: popoverSize=(%.1f, %.1f), popoverRect=%@, arrowPoint=(%.1f, %.1f)",
-        popoverSize.width, popoverSize.height, NSStringFromCGRect(popoverRect), arrowPoint.x, arrowPoint.y);
+  //NSLog(@"[ti.popover] presentPopover: popoverSize=(%.1f, %.1f), popoverRect=%@, arrowPoint=(%.1f, %.1f)",
 
   // Compute content rect (inside popover, offset by arrow)
   CGFloat arrowOffset = _showsArrow ? _arrowSize.height : 0;
@@ -826,8 +812,7 @@ static CGFloat flatValue(CGFloat value) {
   // Convert arrow point to popover-local coordinates
   CGPoint arrowPointInPopover = CGPointMake(arrowPoint.x - popoverOrigin.x, arrowPoint.y - popoverOrigin.y);
 
-  NSLog(@"[ti.popover] presentPopover: arrowPointInPopover=(%.1f, %.1f), contentRect=%@, arrowOffset=%.1f",
-        arrowPointInPopover.x, arrowPointInPopover.y, NSStringFromCGRect(contentRect), arrowOffset);
+  //NSLog(@"[ti.popover] presentPopover: arrowPointInPopover=(%.1f, %.1f), contentRect=%@, arrowOffset=%.1f",
 
   // Clamp arrow point to prevent overlapping corners
   // Only clamp the cross-axis coordinate (x for vertical arrows, y for horizontal)
@@ -853,7 +838,7 @@ static CGFloat flatValue(CGFloat value) {
     }
   }
 
-  NSLog(@"[ti.popover] presentPopover: after clamp arrowPointInPopover=(%.1f, %.1f)", arrowPointInPopover.x, arrowPointInPopover.y);
+  //NSLog(@"[ti.popover] presentPopover: after clamp arrowPointInPopover=(%.1f, %.1f)", arrowPointInPopover.x, arrowPointInPopover.y);
 
   // Create container view (full screen, for hit testing)
   _containerView = [[UIView alloc] initWithFrame:keyWindow.bounds];
@@ -984,10 +969,8 @@ static CGFloat flatValue(CGFloat value) {
   [contentViewProxy view].frame = contentFrame;
   [_popoverContainerView addSubview:[contentViewProxy view]];
 
-  NSLog(@"[ti.popover] presentPopover: contentFrame=%@, contentInsets=(%.1f, %.1f, %.1f, %.1f)",
-        NSStringFromCGRect(contentFrame), contentInsets.left, contentInsets.top, contentInsets.right, contentInsets.bottom);
-  NSLog(@"[ti.popover] presentPopover: shadowOpacity=%.2f, shadowRadius=%.1f, borderWidth=%.1f, showsDimBackground=%d, blurBackground=%d",
-        _shadowOpacity, _shadowRadius, _borderWidth, _showsDimBackground, _blurBackground);
+  //NSLog(@"[ti.popover] presentPopover: contentFrame=%@, contentInsets=(%.1f, %.1f, %.1f, %.1f)",
+  //NSLog(@"[ti.popover] presentPopover: shadowOpacity=%.2f, shadowRadius=%.1f, borderWidth=%.1f, showsDimBackground=%d, blurBackground=%d",
 
   // Shadow — apply directly to popover container layer
   if (_shadowOpacity > 0 && _shadowRadius > 0) {
@@ -1022,7 +1005,7 @@ static CGFloat flatValue(CGFloat value) {
   if (animated) {
     if (_showsArrow && _transitionStyle == 0) {
       // Scale transition with anchor at arrow point
-      CGPoint anchorPoint = [self anchorPointForArrowDirection:baseDirection arrowPoint:arrowPointInPopover popoverSize:popoverSize];
+      CGPoint anchorPoint = [self anchorPointForArrowDirection:popoverArrowDirection arrowPoint:arrowPointInPopover popoverSize:popoverSize];
       CGPoint oldOrigin = _popoverContainerView.frame.origin;
       _popoverContainerView.layer.anchorPoint = anchorPoint;
       _popoverContainerView.layer.position = CGPointMake(
@@ -1037,7 +1020,7 @@ static CGFloat flatValue(CGFloat value) {
     } else if (_transitionStyle == 2) {
       // Translate transition
       _popoverContainerView.alpha = 0.0;
-      CGPoint offset = [self translateOffsetForArrowDirection:baseDirection];
+      CGPoint offset = [self translateOffsetForArrowDirection:popoverArrowDirection];
       _popoverContainerView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
     }
     // transitionStyle == 3 (None): no initial setup needed
@@ -1083,20 +1066,24 @@ static CGFloat flatValue(CGFloat value) {
 
 - (CGPoint)anchorPointForArrowDirection:(UIPopoverArrowDirection)direction arrowPoint:(CGPoint)arrowPoint popoverSize:(CGSize)popoverSize
 {
-  if (!_showsArrow) {
-    return CGPointMake(0.5, 0.5);
+  if (!_showsArrow) return CGPointMake(0.5, 0.5);
+  switch (direction) {
+    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP: return CGPointMake(1, 0);
+    case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM: return CGPointMake(1, 1);
+    case _POPOVER_ARROW_DIRECTION_LEFT_TOP: return CGPointMake(0, 0);
+    case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM: return CGPointMake(0, 1);
+    case _POPOVER_ARROW_DIRECTION_UP_LEFT: return CGPointMake(0, 0);
+    case _POPOVER_ARROW_DIRECTION_UP_RIGHT: return CGPointMake(1, 0);
+    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT: return CGPointMake(0, 1);
+    case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT: return CGPointMake(1, 1);
+    default: break;
   }
   switch (direction) {
-    case UIPopoverArrowDirectionUp:
-      return CGPointMake(arrowPoint.x / popoverSize.width, 0);
-    case UIPopoverArrowDirectionDown:
-      return CGPointMake(arrowPoint.x / popoverSize.width, 1);
-    case UIPopoverArrowDirectionLeft:
-      return CGPointMake(0, arrowPoint.y / popoverSize.height);
-    case UIPopoverArrowDirectionRight:
-      return CGPointMake(1, arrowPoint.y / popoverSize.height);
-    default:
-      return CGPointMake(0.5, 0);
+    case UIPopoverArrowDirectionUp: return CGPointMake(arrowPoint.x / popoverSize.width, 0);
+    case UIPopoverArrowDirectionDown: return CGPointMake(arrowPoint.x / popoverSize.width, 1);
+    case UIPopoverArrowDirectionLeft: return CGPointMake(0, arrowPoint.y / popoverSize.height);
+    case UIPopoverArrowDirectionRight: return CGPointMake(1, arrowPoint.y / popoverSize.height);
+    default: return CGPointMake(0.5, 0);
   }
 }
 
@@ -1104,16 +1091,22 @@ static CGFloat flatValue(CGFloat value) {
 {
   CGFloat offset = 20.0;
   switch (direction) {
-    case UIPopoverArrowDirectionUp:
-      return CGPointMake(0, -offset);
-    case UIPopoverArrowDirectionDown:
-      return CGPointMake(0, offset);
-    case UIPopoverArrowDirectionLeft:
-      return CGPointMake(-offset, 0);
-    case UIPopoverArrowDirectionRight:
+    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP: case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM:
       return CGPointMake(offset, 0);
-    default:
+    case _POPOVER_ARROW_DIRECTION_LEFT_TOP: case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM:
+      return CGPointMake(-offset, 0);
+    case _POPOVER_ARROW_DIRECTION_UP_LEFT: case _POPOVER_ARROW_DIRECTION_UP_RIGHT:
       return CGPointMake(0, -offset);
+    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT: case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT:
+      return CGPointMake(0, offset);
+    default: break;
+  }
+  switch (direction) {
+    case UIPopoverArrowDirectionUp: return CGPointMake(0, -offset);
+    case UIPopoverArrowDirectionDown: return CGPointMake(0, offset);
+    case UIPopoverArrowDirectionLeft: return CGPointMake(-offset, 0);
+    case UIPopoverArrowDirectionRight: return CGPointMake(offset, 0);
+    default: return CGPointMake(0, -offset);
   }
 }
 
@@ -1121,9 +1114,9 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)hide:(id)args
 {
-  NSLog(@"[ti.popover] hide: called — self=%p, popoverInitialized=%d, isDismissing=%d", self, popoverInitialized, isDismissing);
+  //NSLog(@"[ti.popover] hide: called — self=%p, popoverInitialized=%d, isDismissing=%d", self, popoverInitialized, isDismissing);
   if (!popoverInitialized) {
-    NSLog(@"[ti.popover] hide: popover not showing — ignoring");
+    //NSLog(@"[ti.popover] hide: popover not showing — ignoring");
     DebugLog(@"Popover is not showing. Ignoring call");
     return;
   }
@@ -1135,7 +1128,7 @@ static CGFloat flatValue(CGFloat value) {
   if (hideTransitionStyle >= 0) {
       _transitionStyle = hideTransitionStyle;
   }
-  NSLog(@"[ti.popover] hide: isAnimated=%d, transitionStyle=%ld", isAnimated, (long)_transitionStyle);
+  //NSLog(@"[ti.popover] hide: isAnimated=%d, transitionStyle=%ld", isAnimated, (long)_transitionStyle);
 
   [closingCondition lock];
   isDismissing = YES;
@@ -1198,7 +1191,7 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)dismissAndCleanup
 {
-  NSLog(@"[ti.popover] dismissAndCleanup — self=%p", self);
+  //NSLog(@"[ti.popover] dismissAndCleanup — self=%p", self);
   if (popoverBlurEffectView) {
       [popoverBlurEffectView removeFromSuperview];
       popoverBlurEffectView = nil;
@@ -1214,18 +1207,17 @@ static CGFloat flatValue(CGFloat value) {
 - (void)outsideTap:(UITapGestureRecognizer *)gesture
 {
   if (!_dismissOnTapOutside) {
-    NSLog(@"[ti.popover] outsideTap: dismissOnTapOutside is NO — ignoring");
+    //NSLog(@"[ti.popover] outsideTap: dismissOnTapOutside is NO — ignoring");
     return;
   }
   CGPoint location = [gesture locationInView:_popoverContainerView];
-  NSLog(@"[ti.popover] outsideTap: location=(%.1f, %.1f), popoverContainerView.bounds=%@",
-        location.x, location.y, NSStringFromCGRect(_popoverContainerView.bounds));
+  //NSLog(@"[ti.popover] outsideTap: location=(%.1f, %.1f), popoverContainerView.bounds=%@",
   if (![_popoverContainerView pointInside:location withEvent:nil]) {
-    NSLog(@"[ti.popover] outsideTap: point is outside popover — dismissing");
+    //NSLog(@"[ti.popover] outsideTap: point is outside popover — dismissing");
     [self fireEvent:@"hide" withObject:nil];
     [self hide:@{@"animated": @YES}];
   } else {
-    NSLog(@"[ti.popover] outsideTap: point is inside popover — ignoring");
+    //NSLog(@"[ti.popover] outsideTap: point is inside popover — ignoring");
   }
 }
 
@@ -1233,10 +1225,10 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)cleanup
 {
-  NSLog(@"[ti.popover] cleanup — self=%p, popoverInitialized=%d", self, popoverInitialized);
+  //NSLog(@"[ti.popover] cleanup — self=%p, popoverInitialized=%d", self, popoverInitialized);
   [tiPopOverCondition lock];
   tiCurrentlyDisplaying = NO;
-  NSLog(@"[ti.popover] cleanup: setting tiCurrentlyDisplaying=NO, broadcasting condition");
+  //NSLog(@"[ti.popover] cleanup: setting tiCurrentlyDisplaying=NO, broadcasting condition");
   if (currentTiPopover == self) {
     currentTiPopover = nil;
   }
@@ -1326,13 +1318,103 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)deviceRotated:(NSNotification *)sender
 {
+  if (!popoverInitialized) return;
   deviceRotated = YES;
-  // TODO: Reposition popover on rotation
+  TiThreadPerformOnMainThread(^{ [self repositionPopover]; }, NO);
 }
 
 - (void)updatePopover:(NSNotification *)notification
 {
+  if (!popoverInitialized) return;
   deviceRotated = YES;
+  TiThreadPerformOnMainThread(^{ [self repositionPopover]; }, NO);
+}
+
+- (void)repositionPopover
+{
+  UIView *keyWindow = [[UIApplication sharedApplication] keyWindow];
+  if (!keyWindow) keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
+  CGRect containerRect = keyWindow.bounds;
+
+  UIView *sourceView = nil;
+  if ([popoverView isKindOfClass:[TiViewProxy class]])
+    sourceView = [(TiViewProxy *)popoverView valueForKey:@"view"];
+  else if ([popoverView isKindOfClass:[TiProxy class]])
+    sourceView = [(TiProxy *)popoverView valueForKey:@"view"];
+  if (!sourceView || !sourceView.superview) return;
+
+  CGRect sourceRectInWindow = [sourceView.superview convertRect:sourceView.frame toView:nil];
+  if (!CGRectEqualToRect(CGRectZero, popoverRect))
+    sourceRectInWindow = [sourceView.superview convertRect:popoverRect toView:nil];
+
+  CGSize contentSize = popoverContentSize;
+  CGFloat arrowExt = _showsArrow ? _arrowSize.height : 0;
+  UIPopoverArrowDirection baseDir = baseArrowDirection(popoverArrowDirection);
+  CGSize popoverSize;
+  switch (baseDir) {
+    case UIPopoverArrowDirectionUp: case UIPopoverArrowDirectionDown:
+      popoverSize = CGSizeMake(contentSize.width, contentSize.height + arrowExt); break;
+    case UIPopoverArrowDirectionLeft: case UIPopoverArrowDirectionRight:
+      popoverSize = CGSizeMake(contentSize.width + arrowExt, contentSize.height); break;
+    default:
+      popoverSize = CGSizeMake(contentSize.width, contentSize.height + arrowExt); break;
+  }
+
+  CGPoint arrowPoint;
+  switch (baseDir) {
+    case UIPopoverArrowDirectionUp:
+      arrowPoint = CGPointMake(CGRectGetMidX(sourceRectInWindow), CGRectGetMaxY(sourceRectInWindow)); break;
+    case UIPopoverArrowDirectionDown:
+      arrowPoint = CGPointMake(CGRectGetMidX(sourceRectInWindow), CGRectGetMinY(sourceRectInWindow)); break;
+    case UIPopoverArrowDirectionLeft:
+      arrowPoint = CGPointMake(CGRectGetMaxX(sourceRectInWindow), CGRectGetMidY(sourceRectInWindow)); break;
+    case UIPopoverArrowDirectionRight:
+      arrowPoint = CGPointMake(CGRectGetMinX(sourceRectInWindow), CGRectGetMidY(sourceRectInWindow)); break;
+    default:
+      arrowPoint = CGPointMake(CGRectGetMidX(sourceRectInWindow), CGRectGetMaxY(sourceRectInWindow)); break;
+  }
+
+  CGFloat arrowEdgeOffset = _cornerRadius + _arrowSize.width / 2 + 5.0;
+  CGPoint popoverOrigin;
+  switch (popoverArrowDirection) {
+    case UIPopoverArrowDirectionUp:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y); break;
+    case UIPopoverArrowDirectionDown:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y - popoverSize.height); break;
+    case UIPopoverArrowDirectionLeft:
+      popoverOrigin = CGPointMake(arrowPoint.x, arrowPoint.y - popoverSize.height / 2); break;
+    case UIPopoverArrowDirectionRight:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - popoverSize.height / 2); break;
+    case _POPOVER_ARROW_DIRECTION_RIGHT_TOP:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - arrowEdgeOffset); break;
+    case _POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width, arrowPoint.y - (popoverSize.height - arrowEdgeOffset)); break;
+    case _POPOVER_ARROW_DIRECTION_LEFT_TOP:
+      popoverOrigin = CGPointMake(arrowPoint.x, arrowPoint.y - arrowEdgeOffset); break;
+    case _POPOVER_ARROW_DIRECTION_LEFT_BOTTOM:
+      popoverOrigin = CGPointMake(arrowPoint.x, arrowPoint.y - (popoverSize.height - arrowEdgeOffset)); break;
+    case _POPOVER_ARROW_DIRECTION_UP_LEFT:
+      popoverOrigin = CGPointMake(arrowPoint.x - arrowEdgeOffset, arrowPoint.y); break;
+    case _POPOVER_ARROW_DIRECTION_UP_RIGHT:
+      popoverOrigin = CGPointMake(arrowPoint.x - (popoverSize.width - arrowEdgeOffset), arrowPoint.y); break;
+    case _POPOVER_ARROW_DIRECTION_DOWN_LEFT:
+      popoverOrigin = CGPointMake(arrowPoint.x - arrowEdgeOffset, arrowPoint.y - popoverSize.height); break;
+    case _POPOVER_ARROW_DIRECTION_DOWN_RIGHT:
+      popoverOrigin = CGPointMake(arrowPoint.x - (popoverSize.width - arrowEdgeOffset), arrowPoint.y - popoverSize.height); break;
+    default:
+      popoverOrigin = CGPointMake(arrowPoint.x - popoverSize.width / 2, arrowPoint.y); break;
+  }
+
+  UIEdgeInsets safeInsets = _containerSafeAreaInsets;
+  CGRect safeContainerRect = UIEdgeInsetsInsetRect(containerRect, safeInsets);
+  popoverOrigin.x = MAX(popoverOrigin.x, safeContainerRect.origin.x);
+  popoverOrigin.y = MAX(popoverOrigin.y, safeContainerRect.origin.y);
+  popoverOrigin.x = MIN(popoverOrigin.x, CGRectGetMaxX(safeContainerRect) - popoverSize.width);
+  popoverOrigin.y = MIN(popoverOrigin.y, CGRectGetMaxY(safeContainerRect) - popoverSize.height);
+
+  [UIView animateWithDuration:0.25 animations:^{
+    _popoverContainerView.frame = CGRectMake(popoverOrigin.x, popoverOrigin.y, popoverSize.width, popoverSize.height);
+  }];
 }
 
 @end
