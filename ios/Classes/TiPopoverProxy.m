@@ -425,11 +425,16 @@ TiThreadPerformOnMainThread(
   }
 }
 
-// Predicts the arrow direction based on where the source view sits in its window.
-// Arrow points UP when source is in the lower half (popover appears above).
-// Arrow points DOWN when source is in the upper half (popover appears below).
+// Predicts the arrow direction based on JS arrowDirection setting or sourceView position.
+// If JS arrowDirection is set to a specific value (not ANY), that direction is used.
+// Otherwise, predicts based on where the source view sits in its window.
 - (UIPopoverArrowDirection)predictArrowDirectionForPopoverView:(id)viewProxy
 {
+  // If user set a specific arrowDirection in JS, respect it.
+  if (directions != UIPopoverArrowDirectionAny && directions != UIPopoverArrowDirectionUnknown) {
+    return directions;
+  }
+
   if (!viewProxy) {
     return UIPopoverArrowDirectionAny;
   }
