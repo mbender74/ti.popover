@@ -8,6 +8,8 @@ Draws its own arrow and border using `UIBezierPath`, positions itself relative t
 **Version:** 2.0.0  
 **Module ID:** `ti.popover`
 
+📖 **Full Documentation:** [documentation/index.md](documentation/index.md)
+
 ---
 
 ## Features
@@ -214,6 +216,7 @@ Creates a new popover instance.
 | `shadowRadius` | `Number` | `0` | Shadow blur radius |
 | `cornerRadius` | `Number` | `0` | Corner radius in DIP |
 | `transitionStyle` | `Constant` | `TRANSITION_STYLE_SCALE` | Presentation/dismissal animation |
+| `transitionDuration` | `Number` | *auto* | Animation duration in seconds (0 = use defaults) |
 | `dismissOnTapOutside` | `Boolean` | `true` | Dismiss when tapping outside |
 | `safeAreaInsets` | `Object` | `{top:10, right:10, bottom:10, left:10}` | Minimum edge spacing |
 
@@ -227,6 +230,7 @@ Shows the popover.
 | `rect` | `Object` | `null` | Custom rect as offset from source view |
 | `animated` | `Boolean` | `true` | Animate presentation |
 | `transitionStyle` | `Constant` | `null` | Override default transition for show |
+| `transitionDuration` | `Number` | `null` | Override animation duration for show |
 
 ### hide(options)
 
@@ -236,6 +240,7 @@ Hides the popover.
 |--------|------|---------|-------------|
 | `animated` | `Boolean` | `true` | Animate dismissal |
 | `transitionStyle` | `Constant` | `null` | Override default transition for hide |
+| `transitionDuration` | `Number` | `null` | Override animation duration for hide |
 
 ### Events
 

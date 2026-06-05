@@ -79,6 +79,7 @@
   BOOL _blurBackground;
   UIBlurEffectStyle _blurEffectStyle;
   NSInteger _transitionStyle; // 0=Scale, 1=Fade, 2=Translate, 3=None
+  CGFloat _transitionDuration; // animation duration in seconds
   BOOL _dismissOnTapOutside;
   NSInteger _popoverBlurStyle; // -1 = no blur (solid color), otherwise UIBlurEffectStyle value
 

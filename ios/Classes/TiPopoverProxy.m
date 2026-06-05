@@ -57,6 +57,7 @@ static NSArray *popoverSequence;
     _blurBackground = NO;
     _blurEffectStyle = UIBlurEffectStyleLight;
     _transitionStyle = 0; // Scale
+    _transitionDuration = 0; // 0 = use default
     _dismissOnTapOutside = YES;
     _popoverBlurStyle = -1; // -1 = solid color background (no blur on popover body)
     _containerSafeAreaInsets = UIEdgeInsetsMake(10, 10, 10, 10);
@@ -512,6 +513,17 @@ static CGFloat flatValue(CGFloat value) {
   [closingCondition unlock];
 
   animated = [TiUtils boolValue:@"animated" properties:args def:YES];
+
+  // Override transition duration if passed to show()
+  CGFloat showDuration = 0;
+  id showDurationVal = [args valueForKey:@"transitionDuration"];
+  if (showDurationVal) {
+    showDuration = [showDurationVal doubleValue];
+    if (showDuration > 0) {
+      _transitionDuration = showDuration;
+    }
+  }
+
   popoverView = [[args objectForKey:@"view"] retain];
   NSDictionary *rectProps = [args objectForKey:@"rect"];
   if (IS_NULL_OR_NIL(rectProps)) {
@@ -575,6 +587,12 @@ static CGFloat flatValue(CGFloat value) {
 
   _transitionStyle = transitionStyleFromValue([args valueForKey:@"transitionStyle"]);
   if (_transitionStyle < 0) _transitionStyle = 0;
+
+  id durationVal = [args valueForKey:@"transitionDuration"];
+  if (durationVal) {
+    _transitionDuration = [durationVal doubleValue];
+    if (_transitionDuration < 0) _transitionDuration = 0;
+  }
 
   _dismissOnTapOutside = [TiUtils boolValue:@"dismissOnTapOutside" properties:args def:YES];
 
@@ -1027,12 +1045,12 @@ static CGFloat flatValue(CGFloat value) {
 
     // Dim / blur background fade-in
     if (popoverDarkenBackgroundView) {
-      [UIView animateWithDuration:0.18 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+      [UIView animateWithDuration:[self backgroundAnimationDuration] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
         self->popoverDarkenBackgroundView.alpha = 1.0;
       } completion:nil];
     }
     if (popoverBlurEffectView) {
-      [UIView animateWithDuration:0.18 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+      [UIView animateWithDuration:[self backgroundAnimationDuration] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
         popoverBlurEffectView.alpha = 1.0;
       } completion:nil];
     }
@@ -1044,11 +1062,11 @@ static CGFloat flatValue(CGFloat value) {
     };
 
     if (_transitionStyle == 0 && _showsArrow) {
-      [UIView animateWithDuration:0.38 delay:0 usingSpringWithDamping:0.68 initialSpringVelocity:0.5 options:0 animations:animations completion:^(BOOL finished) {
+      [UIView animateWithDuration:[self animationDurationForTransition] delay:0 usingSpringWithDamping:0.68 initialSpringVelocity:0.5 options:0 animations:animations completion:^(BOOL finished) {
         [contentViewProxy windowDidOpen];
       }];
     } else {
-      [UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseOut animations:animations completion:^(BOOL finished) {
+      [UIView animateWithDuration:[self animationDurationForTransition] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:animations completion:^(BOOL finished) {
         [contentViewProxy windowDidOpen];
       }];
     }
@@ -1062,6 +1080,36 @@ static CGFloat flatValue(CGFloat value) {
     }
     [contentViewProxy windowDidOpen];
   }
+}
+
+// Returns the animation duration to use: custom if set, otherwise default based on transition style
+- (CGFloat)animationDurationForTransition
+{
+  if (_transitionDuration > 0) {
+    return _transitionDuration;
+  }
+  // Default durations based on transition type
+  switch (_transitionStyle) {
+    case 0: // Scale (spring)
+      return 0.38;
+    case 1: // Fade
+      return 0.25;
+    case 2: // Translate
+      return 0.25;
+    case 3: // None
+      return 0.0;
+    default:
+      return 0.25;
+  }
+}
+
+// Returns the background animation duration (shorter than main popover)
+- (CGFloat)backgroundAnimationDuration
+{
+  if (_transitionDuration > 0) {
+    return _transitionDuration * 0.75; // background animates slightly faster
+  }
+  return 0.18;
 }
 
 - (CGPoint)anchorPointForArrowDirection:(UIPopoverArrowDirection)direction arrowPoint:(CGPoint)arrowPoint popoverSize:(CGSize)popoverSize
@@ -1128,6 +1176,15 @@ static CGFloat flatValue(CGFloat value) {
   if (hideTransitionStyle >= 0) {
       _transitionStyle = hideTransitionStyle;
   }
+
+  // Override transition duration if passed to hide()
+  id hideDurationVal = [args valueForKey:@"transitionDuration"];
+  if (hideDurationVal) {
+    CGFloat hideDuration = [hideDurationVal doubleValue];
+    if (hideDuration > 0) {
+      _transitionDuration = hideDuration;
+    }
+  }
   //NSLog(@"[ti.popover] hide: isAnimated=%d, transitionStyle=%ld", isAnimated, (long)_transitionStyle);
 
   [closingCondition lock];
@@ -1140,12 +1197,12 @@ static CGFloat flatValue(CGFloat value) {
 
           if (isAnimated) {
               if (self->popoverBlurEffectView != nil) {
-                  [UIView animateWithDuration:0.225 animations:^{
+                  [UIView animateWithDuration:[self backgroundAnimationDuration] animations:^{
                       self->popoverBlurEffectView.alpha = 0.0;
                   }];
               }
               if (self->popoverDarkenBackgroundView != nil) {
-                  [UIView animateWithDuration:0.225 animations:^{
+                  [UIView animateWithDuration:[self backgroundAnimationDuration] animations:^{
                       self->popoverDarkenBackgroundView.alpha = 0.0;
                   }];
               }
@@ -1171,7 +1228,7 @@ static CGFloat flatValue(CGFloat value) {
                   }
               };
 
-              [UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionCurveEaseIn animations:dismissAnimations completion:^(BOOL finished) {
+              [UIView animateWithDuration:[self animationDurationForTransition] delay:0 options:UIViewAnimationOptionCurveEaseIn animations:dismissAnimations completion:^(BOOL finished) {
                   [self dismissAndCleanup];
               }];
           } else {
