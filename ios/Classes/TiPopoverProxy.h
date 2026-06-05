@@ -1,10 +1,10 @@
 /**
- * Appcelerator Titanium Mobile
- * Copyright (c) 2009-2021 by Appcelerator, Inc. All Rights Reserved.
- * Licensed under the terms of the Apache Public License
- * Please see the LICENSE included with this distribution for details.
- * 
- * WARNING: This is generated code. Modify at your own risk and without support.
+ * ti.popover
+ *
+ * Popover for iOS (Titanium Module)
+ * Custom popover implementation based on FSPopoverView architecture.
+ * Draws its own arrow and border using UIBezierPath, positions itself
+ * relative to the source view, and handles dismiss via tap gesture.
  */
 #import <TitaniumKit/TiViewController.h>
 #import <TitaniumKit/TiViewProxy.h>
@@ -16,19 +16,22 @@
 #endif
 #import "TiWindowProxy+Addons.h"
 #import <UIKit/UIKit.h>
-#import <UIKit/UIPopoverBackgroundView.h>
 #import <TitaniumKit/TiViewTemplate.h>
 
+// Arrow dimensions — defaults, can be overridden via JS properties.
+#define TI_POPOVER_ARROW_BASE 30.0f
+#define TI_POPOVER_ARROW_HEIGHT 15.0f
+#define TI_POPOVER_CORNER_RADIUS 10.0f
+#define TI_POPOVER_BORDER_WIDTH 0.0f
+#define TI_POPOVER_SHADOW_RADIUS 5.0f
+#define TI_POPOVER_SHADOW_OPACITY 0.3f
 
-//The iPadPopoverProxy should be seen more as like a window or such, because
-//The popover controller will contain the viewController, which has the view.
-//If the view had the logic, you get some nasty dependency loops.
-@interface TiPopoverProxy : TiProxy <UIPopoverPresentationControllerDelegate, UIAdaptivePresentationControllerDelegate, TiProxyObserver> {
+@interface TiPopoverProxy : TiProxy <TiProxyObserver> {
   @private
   UIViewController *viewController;
   TiViewProxy *contentViewProxy;
 
-  //We need to hold onto this information for whenever the status bar rotates.
+  // Anchor view and rect
   TiViewProxy *popoverView;
   CGRect popoverRect;
   BOOL animated;
@@ -40,20 +43,40 @@
   TiDimension poHeight;
   BOOL deviceRotated;
   UIPopoverArrowDirection popoverArrowDirection;
+
+  // Background / dim overlays (global, on key window)
   UIVisualEffectView *popoverBlurEffectView;
   UIView *popoverDarkenBackgroundView;
+
+  // Popover drawing and positioning
+  UIView *_containerView;
+  UIView *_popoverContainerView;   // clipped to popover shape via CAShapeLayer mask
+  UIView *_backgroundView;          // background inside popover shape (solid color or blur)
+  UIVisualEffectView *_popoverBodyBlurView; // blur effect inside popover shape
+  UITapGestureRecognizer *_outsideTapGesture;
+
+  // Appearance
+  CGFloat _cornerRadius;
+  CGSize _arrowSize;
+  CGFloat _borderWidth;
+  UIColor *_borderColor;
+  CGFloat _shadowRadius;
+  CGFloat _shadowOpacity;
+  UIColor *_shadowColor;
+  UIColor *_popoverBackgroundColor;
+  BOOL _showsArrow;
+  BOOL _showsDimBackground;
+  BOOL _blurBackground;
+  UIBlurEffectStyle _blurEffectStyle;
+  NSInteger _transitionStyle; // 0=Scale, 1=Fade, 2=Translate, 3=None
+  BOOL _dismissOnTapOutside;
+  NSInteger _popoverBlurStyle; // -1 = no blur (solid color), otherwise UIBlurEffectStyle value
+
+  // Layout
   CGSize popoverContentSize;
+  UIEdgeInsets _containerSafeAreaInsets;
 }
+
 - (void)updatePopover:(NSNotification *)notification;
-@end
-
-
-@interface TiPopoverBackgroundView : UIPopoverBackgroundView
-
-@property (nonatomic, readwrite) CGFloat arrowOffset;
-@property (nonatomic, readwrite) UIPopoverArrowDirection arrowDirection;
-+ (UIEdgeInsets)contentViewInsets;
-+ (CGFloat)arrowHeight;
-+ (CGFloat)arrowBase;
 
 @end

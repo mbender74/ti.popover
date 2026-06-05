@@ -34,6 +34,11 @@
 @property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THICK_MATERIAL_DARK;
 @property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_CHROME_MATERIAL_DARK;
 
+@property (nonatomic, readonly) NSString *TRANSITION_STYLE_SCALE;
+@property (nonatomic, readonly) NSString *TRANSITION_STYLE_FADE;
+@property (nonatomic, readonly) NSString *TRANSITION_STYLE_TRANSLATE;
+@property (nonatomic, readonly) NSString *TRANSITION_STYLE_NONE;
+
 - (id)createPopover:(id)args;
 
 @end

@@ -35,6 +35,11 @@ MAKE_SYSTEM_PROP(BLUR_EFFECT_STYLE_SYSTEM_MATERIAL_DARK, UIBlurEffectStyleSystem
 MAKE_SYSTEM_PROP(BLUR_EFFECT_STYLE_SYSTEM_THICK_MATERIAL_DARK, UIBlurEffectStyleSystemThickMaterialDark);
 MAKE_SYSTEM_PROP(BLUR_EFFECT_STYLE_SYSTEM_CHROME_MATERIAL_DARK, UIBlurEffectStyleSystemChromeMaterialDark);
 
+- (NSString *)TRANSITION_STYLE_SCALE { return @"scale"; }
+- (NSString *)TRANSITION_STYLE_FADE { return @"fade"; }
+- (NSString *)TRANSITION_STYLE_TRANSLATE { return @"translate"; }
+- (NSString *)TRANSITION_STYLE_NONE { return @"none"; }
+
 #pragma mark Internal
 
 // This is generated for your module, please do not change it
