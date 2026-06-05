@@ -1085,6 +1085,18 @@ popover.show({
 });
 ```
 
+### Device Rotation
+
+When the device rotates while a popover is displayed, the popover automatically repositions itself to maintain the correct anchor point relative to the source view. The animation is smooth and the popover adapts to the new screen orientation.
+
+### Edge Clamping with Fallback
+
+If an extended (corner-anchored) direction would cause the popover to go off-screen, the module automatically falls back to standard centered positioning. For example, `RIGHT_TOP` near the top-right corner will become a centered `RIGHT` arrow instead of being clipped.
+
+### Animation Anchor Points
+
+For extended directions, the scale animation anchor point is set to the appropriate corner (e.g., `RIGHT_TOP` anchors at top-right). This ensures the popover scales from the arrow position rather than the center, providing a more natural visual effect.
+
 ---
 
 ## Architecture
