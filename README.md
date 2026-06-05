@@ -35,7 +35,7 @@ Draws its own arrow and border using `UIBezierPath`, positions itself relative t
 
 ```xml
 <modules>
-    <module version="1.0.0">ti.popover</module>
+    <module version="2.0.0">ti.popover</module>
 </modules>
 ```
 
@@ -43,7 +43,7 @@ Draws its own arrow and border using `UIBezierPath`, positions itself relative t
 
 ```xml
 <Alloy>
-    <Module id="ti.popover" version="1.0.0" />
+    <Module id="ti.popover" version="2.0.0" />
 </Alloy>
 ```
 
