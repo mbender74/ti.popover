@@ -96,7 +96,7 @@ Presents the popover anchored to a source view.
 | Property          | Type       | Description                                                                  |
 |-------------------|------------|------------------------------------------------------------------------------|
 | `view`            | `Ti.UI.View` | **Required.** The source view the popover anchors to.                          |
-| `rect`            | `Object`   | Optional rect (`{left, top, width, height}`) within the source view. Defaults to the view's full frame. |
+| `rect`            | `Object`   | Offset relative to the source view's position (`{x, y}` or `{left, top}`). Optionally includes `width`/`height` to override the source view's anchor size. When only `x`/`y` are set, the source view's own width/height are preserved. |
 | `animated`        | `Boolean`  | Animate the presentation. Default: `true`.                                    |
 | `cornerRadius`    | `Number`   | Override corner radius for this presentation.                                  |
 | `arrowWidth`      | `Number`   | Override arrow base width for this presentation.                               |
@@ -183,7 +183,7 @@ popover.addEventListener('hide', function(e) {
 
 ### Constants
 
-#### Arrow Direction
+#### Arrow Direction — Standard
 
 | Constant                                      | Description                                      |
 |-----------------------------------------------|--------------------------------------------------|
@@ -194,6 +194,30 @@ popover.addEventListener('hide', function(e) {
 | `ti_popover.POPOVER_ARROW_DIRECTION_ANY`      | Auto-detect the best direction based on available screen space. |
 
 > **Auto-detect priority:** Up > Down > Left > Right. The module checks each direction in order and picks the first one with sufficient space.
+
+#### Arrow Direction — Extended (Corner-Anchored)
+
+Extended directions position the arrow at a specific corner of the popover and anchor the popover there, extending away from the edge. The arrow sits at a safe distance from the rounded corner.
+
+| Constant                                                    | Arrow Position | Popover Extends |
+|-------------------------------------------------------------|---------------|------------------|
+| `ti_popover.POPOVER_ARROW_DIRECTION_RIGHT_TOP`              | Right edge, top | Down |
+| `ti_popover.POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM`           | Right edge, bottom | Up |
+| `ti_popover.POPOVER_ARROW_DIRECTION_LEFT_TOP`               | Left edge, top | Down |
+| `ti_popover.POPOVER_ARROW_DIRECTION_LEFT_BOTTOM`            | Left edge, bottom | Up |
+| `ti_popover.POPOVER_ARROW_DIRECTION_UP_LEFT`                | Top edge, left | Right |
+| `ti_popover.POPOVER_ARROW_DIRECTION_UP_RIGHT`               | Top edge, right | Left |
+| `ti_popover.POPOVER_ARROW_DIRECTION_DOWN_LEFT`              | Bottom edge, left | Right |
+| `ti_popover.POPOVER_ARROW_DIRECTION_DOWN_RIGHT`             | Bottom edge, right | Left |
+
+> **Example:** `RIGHT_TOP` — the arrow is positioned at the upper-right corner of the popover, pointing right toward the source view. The popover body extends downward from the arrow.
+
+```javascript
+var popover = ti_popover.createPopover({
+    contentView: contentView,
+    arrowDirection: ti_popover.POPOVER_ARROW_DIRECTION_RIGHT_TOP
+});
+```
 
 #### Transition Style
 
@@ -462,6 +486,97 @@ directions.forEach(function(item) {
     });
     win.add(button);
 });
+
+win.open();
+```
+
+### Extended Arrow Directions (Corner-Anchored)
+
+Extended directions place the arrow at a specific corner of the popover, and the popover extends away from that corner.
+
+```javascript
+var ti_popover = require("ti.popover");
+
+function createPopover(title, arrowDir) {
+    var contentView = Ti.UI.createView({
+        width: 200,
+        height: 150,
+        backgroundColor: '#ffffff'
+    });
+    contentView.add(Ti.UI.createLabel({
+        text: title,
+        font: { fontSize: 16, fontWeight: 'bold' },
+        color: '#333',
+        top: 15,
+        left: 15,
+        right: 15
+    }));
+
+    var popover = ti_popover.createPopover({
+        contentView: contentView,
+        arrowDirection: arrowDir,
+        cornerRadius: 12
+    });
+    return popover;
+}
+
+var win = Ti.UI.createWindow({ backgroundColor: '#f5f5f5' });
+
+// RIGHT_TOP: Arrow at top-right, popover extends DOWN
+var popover1 = createPopover('RIGHT_TOP', ti_popover.POPOVER_ARROW_DIRECTION_RIGHT_TOP);
+var btn1 = Ti.UI.createButton({
+    title: 'RIGHT_TOP',
+    width: 160,
+    height: 44,
+    top: 80,
+    left: 200
+});
+btn1.addEventListener('click', function() {
+    popover1.show({ view: btn1 });
+});
+win.add(btn1);
+
+// LEFT_TOP: Arrow at top-left, popover extends DOWN
+var popover2 = createPopover('LEFT_TOP', ti_popover.POPOVER_ARROW_DIRECTION_LEFT_TOP);
+var btn2 = Ti.UI.createButton({
+    title: 'LEFT_TOP',
+    width: 160,
+    height: 44,
+    top: 140,
+    left: 20
+});
+btn2.addEventListener('click', function() {
+    popover2.show({ view: btn2 });
+});
+win.add(btn2);
+
+// RIGHT_BOTTOM: Arrow at bottom-right, popover extends UP
+var popover3 = createPopover('RIGHT_BOTTOM', ti_popover.POPOVER_ARROW_DIRECTION_RIGHT_BOTTOM);
+var btn3 = Ti.UI.createButton({
+    title: 'RIGHT_BOTTOM',
+    width: 160,
+    height: 44,
+    top: 400,
+    left: 200
+});
+btn3.addEventListener('click', function() {
+    popover3.show({ view: btn3 });
+});
+win.add(btn3);
+
+// LEFT_BOTTOM: Arrow at bottom-left, popover extends UP
+var popover4 = createPopover('LEFT_BOTTOM', ti_popover.POPOVER_ARROW_DIRECTION_LEFT_BOTTOM);
+var btn4 = Ti.UI.createButton({
+    title: 'LEFT_BOTTOM',
+    width: 160,
+    height: 44,
+    top: 460,
+    left: 20
+});
+btn4.addEventListener('click', function() {
+    popover4.show({ view: btn4 });
+});
+win.add(btn4);
 
 win.open();
 ```
@@ -780,9 +895,9 @@ win.add(button);
 win.open();
 ```
 
-### Custom Rect on Source View
+### Offset Rect on Source View
 
-Anchor the popover to a specific rect within the source view, not the entire view frame.
+The `rect` property in `show()` is an offset relative to the source view's position. Use it to shift the anchor point without changing the source view reference.
 
 ```javascript
 var ti_popover = require("ti.popover");
@@ -793,14 +908,14 @@ var contentView = Ti.UI.createView({
     backgroundColor: '#ffffff'
 });
 contentView.add(Ti.UI.createLabel({
-    text: 'Rect Anchored',
+    text: 'Offset Anchor',
     font: { fontSize: 14, fontWeight: 'bold' },
     color: '#333',
     top: 15,
     left: 15
 }));
 contentView.add(Ti.UI.createLabel({
-    text: 'The arrow points to a specific rect, not the full button.',
+    text: 'The rect shifts the anchor 50px right and 30px down from the button origin.',
     font: { fontSize: 12 },
     color: '#888',
     top: 40,
@@ -812,38 +927,21 @@ var popover = ti_popover.createPopover({
     contentView: contentView
 });
 
-var container = Ti.UI.createView({
-    width: 300,
-    height: 100,
-    top: 100,
-    backgroundColor: '#bdc3c7',
-    borderRadius: 8
+var button = Ti.UI.createButton({
+    title: 'Show Popover',
+    width: 180,
+    height: 44,
+    top: 100
 });
-
-var target = Ti.UI.createView({
-    width: 60,
-    height: 60,
-    left: 100,
-    top: 20,
-    backgroundColor: '#e74c3c',
-    borderRadius: 8
-});
-container.add(target);
-
-target.addEventListener('click', function() {
+button.addEventListener('click', function() {
     popover.show({
-        view: container,
-        rect: {
-            left: 100,
-            top: 20,
-            width: 60,
-            height: 60
-        }
+        view: button,
+        rect: { x: 50, y: 30 }  // offset from button origin
     });
 });
 
 var win = Ti.UI.createWindow({ backgroundColor: '#f5f5f5' });
-win.add(container);
+win.add(button);
 win.open();
 ```
 
@@ -974,6 +1072,18 @@ When `arrowDirection` is set to `POPOVER_ARROW_DIRECTION_ANY`, the module tries 
 ### Safe Area Insets
 
 The `safeAreaInsets` property (default: 10 DIP on all sides) prevents the popover from being positioned at the very edge of the screen. Increase these values if your popover overlaps with navigation bars, tab bars, or other UI elements at the screen edges.
+
+### `rect` as Offset
+
+When passed to `show()`, the `rect` property is interpreted as an **offset relative to the source view's position**. The `x`/`left` and `y`/`top` values are added to the source view's origin. If `width` and `height` are not set (or are zero), the source view's own dimensions are used for the anchor rect.
+
+```javascript
+// Shift anchor point 50px right and 20px down from the button
+popover.show({
+    view: button,
+    rect: { x: 50, y: 20 }
+});
+```
 
 ---
 
