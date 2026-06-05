@@ -22,15 +22,11 @@
 
 static NSCondition *tiPopOverCondition;
 static BOOL tiCurrentlyDisplaying = NO;
-TiPopoverProxy *currentTiPopover;
+static TiPopoverProxy *currentTiPopover;
 
 // Arrow dimensions from TiPopoverBackgroundView — needed in contentSize before the inner class is defined.
 #define TI_POPOVER_ARROW_BASE 30.0f
 #define TI_POPOVER_ARROW_HEIGHT 15.0f
-
-UIVisualEffectView *popoverBlurEffectView;
-UIView *popoverDarkenBackgroundView;
-CGSize TiPopoverContentSize;
 
 @implementation TiPopoverProxy
 
@@ -41,7 +37,6 @@ static NSArray *popoverSequence;
 - (NSArray *)keySequence
 {
   if (popoverSequence == nil) {
-      //popoverSequence = [[NSArray arrayWithObjects:@"contentView", @"width", @"height", nil] retain];
       popoverSequence = [[NSArray arrayWithObjects:@"contentView", nil] retain];
   }
   return popoverSequence;
@@ -70,13 +65,12 @@ static NSArray *popoverSequence;
     currentTiPopover = nil;
   }
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [viewController.view removeObserver:self forKeyPath:@"safeAreaInsets"];
     RELEASE_TO_NIL(viewController);
     RELEASE_TO_NIL(popoverView);
     RELEASE_TO_NIL(closingCondition);
     RELEASE_TO_NIL(contentViewProxy);
-    RELEASE_TO_NIL(popoverBlurEffectView);
-    RELEASE_TO_NIL(popoverDarkenBackgroundView);
+    RELEASE_TO_NIL(self->popoverBlurEffectView);
+    RELEASE_TO_NIL(self->popoverDarkenBackgroundView);
     [super dealloc];
 }
 
@@ -96,7 +90,8 @@ static NSArray *popoverSequence;
 - (void)setArrowDirection:(id)args
 {
   if (popoverInitialized) {
-    DebugLog(@"[ERROR] Arrow Directions can only be set before showing the popover.") return;
+    DebugLog(@"[ERROR] Arrow Directions can only be set before showing the popover.");
+    return;
   }
 
   ENSURE_SINGLE_ARG(args, NSNumber)
@@ -107,13 +102,13 @@ static NSArray *popoverSequence;
 
 - (void)setHeight:(id)value
 {
+    DebugLog(@"[WARN] height is set via contentView properties, not directly on the popover");
     poHeight = TiDimensionUndefined;
-
 }
 - (void)setWidth:(id)value
 {
+    DebugLog(@"[WARN] width is set via contentView properties, not directly on the popover");
     poWidth = TiDimensionUndefined;
-
 }
 
 
@@ -132,7 +127,6 @@ static NSArray *popoverSequence;
   contentViewProxy = [(TiViewProxy *)value retain];
 
     if ([contentViewProxy isKindOfClass:[TiWindowProxy class]]) {
-       // if([contentViewProxy valueForKey:@"window"]){
             if ([contentViewProxy layoutProperties]->width.type == TiDimensionTypeAutoSize) {
                 [contentViewProxy layoutProperties]->width = TiDimensionUndefined;
                 poWidth = TiDimensionUndefined;
@@ -157,7 +151,6 @@ static NSArray *popoverSequence;
             else {
                 poHeight = TiDimensionUndefined;
             }
-      //  }
     }
 
   [self replaceValue:contentViewProxy forKey:@"contentView" notification:NO];
@@ -184,11 +177,7 @@ static NSArray *popoverSequence;
   [self replaceValue:actualArgs forKey:@"passthroughViews" notification:NO];
 
   if (popoverInitialized) {
-   // TiThreadPerformOnMainThread(
-    //    ^{
           [self updatePassThroughViews];
-    //    },
-    //    NO);
   }
 }
 
@@ -201,11 +190,13 @@ static NSArray *popoverSequence;
   }
 
   if (popoverInitialized) {
-    DebugLog(@"Popover is already showing. Ignoring call") return;
+    DebugLog(@"Popover is already showing. Ignoring call");
+    return;
   }
 
   if (contentViewProxy == nil) {
-    DebugLog(@"[ERROR] Popover presentation without contentView property set is no longer supported. Ignoring call") return;
+    DebugLog(@"[ERROR] Popover presentation without contentView property set is no longer supported. Ignoring call");
+    return;
   }
 
   ENSURE_SINGLE_ARG_OR_NIL(args, NSDictionary);
@@ -222,19 +213,13 @@ static NSArray *popoverSequence;
     
     if ([TiUtils boolValue:@"blurBackground" properties:args def:NO] == YES){
         if (!UIAccessibilityIsReduceTransparencyEnabled()) {
-           // popViewController.popoverPresentationController.backgroundColor = [UIColor clearColor];
-            
             UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:[TiUtils intValue:[args valueForKey:@"blurEffect"] def:UIBlurEffectStyleLight]];
-            popoverBlurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-            //always fill the view
-            
-            popoverBlurEffectView.alpha = 0.0;
-            popoverBlurEffectView.frame = [[TiApp app] controller].view.bounds;
-            popoverBlurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            self->popoverBlurEffectView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
+            self->popoverBlurEffectView.alpha = 0.0;
+            self->popoverBlurEffectView.frame = [[TiApp app] controller].view.bounds;
+            self->popoverBlurEffectView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
-            [[[TiApp app] controller].view addSubview:popoverBlurEffectView]; //if you have more UIViews, use an insertSubview API to place it where needed
-        } else {
-           // self.view.backgroundColor = [UIColor clearColor];
+            [[[TiApp app] controller].view addSubview:self->popoverBlurEffectView];
         }
     }
     
@@ -244,13 +229,12 @@ static NSArray *popoverSequence;
      if (backgroundColor != nil) {
          backgroundColorValue = [[TiUtils colorValue:backgroundColor] _color];
          
-         popoverDarkenBackgroundView = [[UIView alloc] init];
-         //always fill the view
-         popoverDarkenBackgroundView.alpha = 0.0;
-         popoverDarkenBackgroundView.backgroundColor = backgroundColorValue;
-         popoverDarkenBackgroundView.frame = [[TiApp app] controller].view.bounds;
-         popoverDarkenBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-         [[[TiApp app] controller].view addSubview:popoverDarkenBackgroundView]; //if you have more UIViews, use an insertSubview API to place it where needed
+         self->popoverDarkenBackgroundView = [[UIView alloc] init];
+         self->popoverDarkenBackgroundView.alpha = 0.0;
+         self->popoverDarkenBackgroundView.backgroundColor = backgroundColorValue;
+         self->popoverDarkenBackgroundView.frame = [[TiApp app] controller].view.bounds;
+         self->popoverDarkenBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+         [[[TiApp app] controller].view addSubview:self->popoverDarkenBackgroundView];
 
      }
     
@@ -265,8 +249,8 @@ static NSArray *popoverSequence;
   }
 
   if (IS_NULL_OR_NIL(popoverView)) {
-    DebugLog(@"[ERROR] Popover presentation without view property in the arguments is not supported. Ignoring call")
-      RELEASE_TO_NIL(popoverView);
+    DebugLog(@"[ERROR] Popover presentation without view property in the arguments is not supported. Ignoring call");
+    RELEASE_TO_NIL(popoverView);
     return;
   }
 
@@ -289,7 +273,8 @@ TiThreadPerformOnMainThread(
 - (void)hide:(id)args
 {
   if (!popoverInitialized) {
-    DebugLog(@"Popover is not showing. Ignoring call") return;
+    DebugLog(@"Popover is not showing. Ignoring call");
+    return;
   }
 
   ENSURE_SINGLE_ARG_OR_NIL(args, NSDictionary);
@@ -298,37 +283,36 @@ TiThreadPerformOnMainThread(
   isDismissing = YES;
   [closingCondition unlock];
 
-    dispatch_async(dispatch_get_main_queue(), ^{
+  TiThreadPerformOnMainThread(
+      ^{
           [self->contentViewProxy windowWillClose];
-          if (popoverBlurEffectView != nil){
+          if (self->popoverBlurEffectView != nil){
               [UIView animateWithDuration:0.225 animations:^{
-                  popoverBlurEffectView.alpha = 0.0;
-                  
+                  self->popoverBlurEffectView.alpha = 0.0;
               }];
           }
-          if (popoverDarkenBackgroundView != nil){
+          if (self->popoverDarkenBackgroundView != nil){
               [UIView animateWithDuration:0.225 animations:^{
-                  popoverDarkenBackgroundView.alpha = 0.0;
-                
+                  self->popoverDarkenBackgroundView.alpha = 0.0;
               }];
           }
 
           self->animated = [TiUtils boolValue:@"animated" properties:args def:NO];
           [[self viewController] dismissViewControllerAnimated:self->animated
                                                   completion:^{
-              
-                                                  if (popoverBlurEffectView != nil){
-                                                      [popoverBlurEffectView removeFromSuperview];
-                                                      popoverBlurEffectView = nil;
+                                                  if (self->popoverBlurEffectView != nil){
+                                                      [self->popoverBlurEffectView removeFromSuperview];
+                                                      self->popoverBlurEffectView = nil;
                                                   }
-                                                  if (popoverDarkenBackgroundView != nil){
-                                                      [popoverDarkenBackgroundView removeFromSuperview];
-                                                      popoverDarkenBackgroundView = nil;
+                                                  if (self->popoverDarkenBackgroundView != nil){
+                                                      [self->popoverDarkenBackgroundView removeFromSuperview];
+                                                      self->popoverDarkenBackgroundView = nil;
                                                   }
               [self fireEvent:@"closed" withObject:nil];
                                                     [self cleanup];
                                                   }];
-    });
+      },
+   NO);
 }
 
 #pragma mark Internal Methods
@@ -356,7 +340,6 @@ TiThreadPerformOnMainThread(
 
   popoverInitialized = NO;
   popoverArrowDirection = UIPopoverArrowDirectionUnknown;
- // [self fireEvent:@"hide" withObject:nil]; //Checking for listeners are done by fireEvent anyways.
   [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillChangeStatusBarOrientationNotification object:nil];
   [contentViewProxy windowDidClose];
 
@@ -374,7 +357,7 @@ TiThreadPerformOnMainThread(
   [viewController.view removeObserver:self forKeyPath:@"safeAreaInsets"];
   RELEASE_TO_NIL(viewController);
   RELEASE_TO_NIL(popoverView);
-  [self performSelector:@selector(release) withObject:nil afterDelay:0.5];
+  [self autorelease];
   [closingCondition lock];
   isDismissing = NO;
   [closingCondition signal];
@@ -413,7 +396,6 @@ TiThreadPerformOnMainThread(
   } else {
       [contentViewProxy windowWillOpen];
       [contentViewProxy reposition];
-      //[contentViewProxy layoutChildrenIfNeeded];
 
       // Predict arrow direction based on sourceView position BEFORE contentSize is called.
       self->popoverArrowDirection = [self predictArrowDirectionForPopoverView:popoverView];
@@ -421,7 +403,6 @@ TiThreadPerformOnMainThread(
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
          [self updatePopoverNow];
       });
-      //[contentViewProxy windowDidOpen];
   }
 }
 
@@ -489,7 +470,7 @@ TiThreadPerformOnMainThread(
     poHeight = TiDimensionUndefined;
   }
 
- TiPopoverContentSize = SizeConstraintViewWithSizeAddingResizing([contentViewProxy layoutProperties], contentViewProxy, screenSize, NULL);
+ self->popoverContentSize = SizeConstraintViewWithSizeAddingResizing([contentViewProxy layoutProperties], contentViewProxy, screenSize, NULL);
 
   // Add margin insets when explicit dimensions AND margins are both set,
   // so the popover is large enough to show the margins around the content.
@@ -532,10 +513,10 @@ TiThreadPerformOnMainThread(
       break;
   }
 
-  TiPopoverContentSize.width += extraWidth;
-  TiPopoverContentSize.height += extraHeight;
+  self->popoverContentSize.width += extraWidth;
+  self->popoverContentSize.height += extraHeight;
 
-  return TiPopoverContentSize;
+  return self->popoverContentSize;
 #else
   return CGSizeZero;
 #endif
@@ -588,8 +569,6 @@ TiThreadPerformOnMainThread(
     UIViewController *theController = [self viewController];
     [theController setModalPresentationStyle:UIModalPresentationPopover];
     theController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
-  //  [theController setPreferredContentSize:[contentViewProxy view].frame.size];
-   //
     [theController popoverPresentationController].permittedArrowDirections = [self arrowDirection];
     [theController popoverPresentationController].delegate = self;
     [[TiApp app] controller].modalPresentationStyle = UIModalPresentationOverCurrentContext;
@@ -600,37 +579,35 @@ TiThreadPerformOnMainThread(
     else {
         [theController popoverPresentationController].backgroundColor = [UIColor clearColor];
     }
-               
-    
-    
 
-    // [[TiApp app] showModalController:theController animated:animated];
 
-    
+
+
+
     if ([contentViewProxy isKindOfClass:[TiWindowProxy class]]) {
         if (animated){
-            if (popoverBlurEffectView != nil){
+            if (self->popoverBlurEffectView != nil){
                 [UIView animateWithDuration:0.15 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                     animations:^{
-                        popoverBlurEffectView.alpha = 1.0;
+                        self->popoverBlurEffectView.alpha = 1.0;
                 }
                 completion:nil];
             }
-            if (popoverDarkenBackgroundView != nil){
+            if (self->popoverDarkenBackgroundView != nil){
                
                 [UIView animateWithDuration:0.15 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                     animations:^{
-                    popoverDarkenBackgroundView.alpha = 1.0;
+                    self->popoverDarkenBackgroundView.alpha = 1.0;
                 }
                 completion:nil];
             }
         }
         else {
-            if (popoverBlurEffectView != nil){
-                popoverBlurEffectView.alpha = 1.0;
+            if (self->popoverBlurEffectView != nil){
+                self->popoverBlurEffectView.alpha = 1.0;
             }
-            if (popoverDarkenBackgroundView != nil){
-                popoverDarkenBackgroundView.alpha = 1.0;
+            if (self->popoverDarkenBackgroundView != nil){
+                self->popoverDarkenBackgroundView.alpha = 1.0;
             }
         }
             [[[TiApp app] controller] presentViewController:theController animated:animated completion:nil];
@@ -654,34 +631,32 @@ TiThreadPerformOnMainThread(
     }
     else {
         if (animated){
-            if (popoverBlurEffectView != nil){
+            if (self->popoverBlurEffectView != nil){
                 [UIView animateWithDuration:0.125 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                     animations:^{
-                        popoverBlurEffectView.alpha = 1.0;
+                        self->popoverBlurEffectView.alpha = 1.0;
                 }
                 completion:nil];
             }
-            if (popoverDarkenBackgroundView != nil){
+            if (self->popoverDarkenBackgroundView != nil){
                
                 [UIView animateWithDuration:0.125 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
                     animations:^{
-                    popoverDarkenBackgroundView.alpha = 1.0;
+                    self->popoverDarkenBackgroundView.alpha = 1.0;
                 }
                 completion:nil];
             }
         }
         else {
-            if (popoverBlurEffectView != nil){
-                popoverBlurEffectView.alpha = 1.0;
+            if (self->popoverBlurEffectView != nil){
+                self->popoverBlurEffectView.alpha = 1.0;
             }
-            if (popoverDarkenBackgroundView != nil){
-                popoverDarkenBackgroundView.alpha = 1.0;
+            if (self->popoverDarkenBackgroundView != nil){
+                self->popoverDarkenBackgroundView.alpha = 1.0;
             }
         }
         [[[TiApp app] controller] presentViewController:theController animated:NO completion:nil];
         [contentViewProxy windowDidOpen];
-
-        //dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 
             if (animated){
                 [UIView animateWithDuration:0.01 delay: 0.0 options: UIViewAnimationOptionCurveEaseIn
@@ -694,7 +669,6 @@ TiThreadPerformOnMainThread(
             else {
                 [contentViewProxy view].alpha = 1.0;
             }
-        //});
     }
 }
 
@@ -788,19 +762,10 @@ TiThreadPerformOnMainThread(
 
 - (void)proxyDidRelayout:(id)sender
 {
-  if (sender == contentViewProxy) {
-    if (viewController != nil) {
-      CGSize newSize = [self contentSize];
-        
-        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
-                [self updateContentSize];
-        }
-        
-      if (TiPopoverContentSize.width != newSize.width || TiPopoverContentSize.height != newSize.height){
-        if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
-          [self updateContentSize];
-        }
-      }
+  if (sender == contentViewProxy && viewController != nil) {
+    CGSize newSize = [self contentSize];
+    if (!CGSizeEqualToSize([viewController preferredContentSize], newSize)) {
+      [self updateContentSize];
     }
   }
 }
@@ -865,19 +830,19 @@ TiThreadPerformOnMainThread(
 #endif
 }
 
-- (BOOL)popoverPresentationControllerShouldDismissPopover:(UIPopoverPresentationController *)popoverPresentationController
+- (BOOL)presentationControllerShouldDismiss:(UIPresentationController *)presentationController
 {
   if ([[self viewController] presentedViewController] != nil) {
     return NO;
   }
-    if (popoverBlurEffectView != nil){
+    if (self->popoverBlurEffectView != nil){
         [UIView animateWithDuration:0.225 animations:^{
-            popoverBlurEffectView.alpha = 0.0;
+            self->popoverBlurEffectView.alpha = 0.0;
         }];
     }
-    if (popoverDarkenBackgroundView != nil){
+    if (self->popoverDarkenBackgroundView != nil){
         [UIView animateWithDuration:0.225 animations:^{
-            popoverDarkenBackgroundView.alpha = 0.0;
+            self->popoverDarkenBackgroundView.alpha = 0.0;
         }];
     }
     [self fireEvent:@"hide" withObject:nil];
@@ -886,15 +851,15 @@ TiThreadPerformOnMainThread(
   return YES;
 }
 
-- (void)popoverPresentationControllerDidDismissPopover:(UIPopoverPresentationController *)popoverPresentationController
+- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
 {
-    if (popoverBlurEffectView != nil){
-        [popoverBlurEffectView removeFromSuperview];
-        popoverBlurEffectView = nil;
+    if (self->popoverBlurEffectView != nil){
+        [self->popoverBlurEffectView removeFromSuperview];
+        self->popoverBlurEffectView = nil;
     }
-    if (popoverDarkenBackgroundView != nil){
-        [popoverDarkenBackgroundView removeFromSuperview];
-        popoverDarkenBackgroundView = nil;
+    if (self->popoverDarkenBackgroundView != nil){
+        [self->popoverDarkenBackgroundView removeFromSuperview];
+        self->popoverDarkenBackgroundView = nil;
     }
   [self cleanup];
 }
@@ -924,7 +889,6 @@ TiThreadPerformOnMainThread(
       deviceRotated = NO;
       [self updateContentViewWithSafeAreaInsets:insetsValue];
     } else if (deviceRotated) {
-      // [self viewController]  need a bit of time to set its frame while rotating
       deviceRotated = NO;
       [self performSelector:@selector(updateContentViewWithSafeAreaInsets:) withObject:insetsValue afterDelay:.05];
     }
@@ -946,31 +910,13 @@ TiThreadPerformOnMainThread(
 @synthesize arrowDirection = _arrowDirection;
 @synthesize arrowOffset = _arrowOffset;
 
-#define TOP_CONTENT_INSET s_ContentInset
-#define LEFT_CONTENT_INSET s_ContentInset
-#define BOTTOM_CONTENT_INSET s_ContentInset
-#define RIGHT_CONTENT_INSET s_ContentInset
-
-#define DEFAULT_CONTENT_INSET 9.0f
-static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
-
+#define BorderInset 10.0f
 #define ArrowBase 30.0f
 #define ArrowHeight 15.0f
-#define BorderInset 10.0f
-
-//+ (UIEdgeInsets)contentViewInsets
-//{
-//    return UIEdgeInsetsMake(TOP_CONTENT_INSET, LEFT_CONTENT_INSET, BOTTOM_CONTENT_INSET, RIGHT_CONTENT_INSET);
-//}
 
 +(UIEdgeInsets)contentViewInsets{
     return UIEdgeInsetsMake(BorderInset, BorderInset, BorderInset, BorderInset);
 }
-
-//+ (void)setContentInset:(CGFloat)contentInset
-//{
-//    s_ContentInset = contentInset;
-//}
 
 - (CGFloat) arrowOffset {
     return _arrowOffset;
@@ -978,6 +924,7 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
 
 - (void) setArrowOffset:(CGFloat)arrowOffset {
     _arrowOffset = arrowOffset;
+    [self setNeedsLayout];
 }
 
 - (UIPopoverArrowDirection)arrowDirection {
@@ -985,8 +932,8 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
 }
 
 - (void)setArrowDirection:(UIPopoverArrowDirection)arrowDirection {
-
     _arrowDirection = arrowDirection;
+    [self setNeedsLayout];
 }
 
 +(CGFloat)arrowHeight{
@@ -997,68 +944,15 @@ static CGFloat s_ContentInset = DEFAULT_CONTENT_INSET;
     return ArrowBase;
 }
 
-
-//
--  (void)layoutSubviews {
+- (void)layoutSubviews {
     [super layoutSubviews];
-
-    CGFloat _height = self.frame.size.height;
-    CGFloat _width = self.frame.size.width;
-    CGFloat _left = 0.0;
-    CGFloat _top = 0.0;
-    CGFloat _coordinate = 0.0;
-    CGAffineTransform _rotation = CGAffineTransformIdentity;
-
-    switch (self.arrowDirection) {
-        case UIPopoverArrowDirectionUp:
-            _top += ArrowHeight;
-            _height -= ArrowHeight;
-            _coordinate = ((self.frame.size.width / 2) + self.arrowOffset) - (ArrowBase/2);
-            break;
-
-
-        case UIPopoverArrowDirectionDown:
-            _height -= ArrowHeight;
-            _coordinate = ((self.frame.size.width / 2) + self.arrowOffset) - (ArrowBase/2);
-            _rotation = CGAffineTransformMakeRotation( M_PI );
-            break;
-
-        case UIPopoverArrowDirectionLeft:
-            _left += ArrowBase;
-            _width -= ArrowBase;
-            _coordinate = ((self.frame.size.height / 2) + self.arrowOffset) - (ArrowHeight/2);
-            _rotation = CGAffineTransformMakeRotation( -M_PI_2 );
-            break;
-
-        case UIPopoverArrowDirectionRight:
-            _width -= ArrowBase;
-            _coordinate = ((self.frame.size.height / 2) + self.arrowOffset)- (ArrowHeight/2);
-            _rotation = CGAffineTransformMakeRotation( M_PI_2 );
-
-            break;
-        case UIPopoverArrowDirectionAny:
-            break;
-        case UIPopoverArrowDirectionUnknown:
-            break;
-    }
 }
-
-#pragma mark - Initialization
 
 - (id)initWithFrame:(CGRect)frame
 {
     if (self = [super initWithFrame:frame])
     {
-
-        
-//        UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
-//        popoverBackgroundBlurView = [[UIVisualEffectView alloc] initWithEffect:blurEffect];
-//
-//        [self addSubview:popoverBackgroundBlurView];
-//        popoverBackgroundBlurView.frame = self.bounds;
-
     }
-
     return self;
 }
 @end

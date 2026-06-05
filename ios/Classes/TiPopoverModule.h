@@ -17,13 +17,22 @@
 @property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_LEFT;
 @property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_RIGHT;
 @property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_ANY;
-@property (nonatomic, readonly) NSNumber *POPOVER_ARROW_DIRECTION_UNKNOWN;
 
-@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_EXTRA_LIGHT;
-@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_LIGHT;
-@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_DARK;
-
-
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_ULTRA_THIN_MATERIAL;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THIN_MATERIAL;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_MATERIAL;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THICK_MATERIAL;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_CHROME_MATERIAL;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_ULTRA_THIN_MATERIAL_LIGHT;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THIN_MATERIAL_LIGHT;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_MATERIAL_LIGHT;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THICK_MATERIAL_LIGHT;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_CHROME_MATERIAL_LIGHT;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_ULTRA_THIN_MATERIAL_DARK;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THIN_MATERIAL_DARK;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_MATERIAL_DARK;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_THICK_MATERIAL_DARK;
+@property (nonatomic, readonly) NSNumber *BLUR_EFFECT_STYLE_SYSTEM_CHROME_MATERIAL_DARK;
 
 - (id)createPopover:(id)args;
 

@@ -13,16 +13,6 @@
 
 @implementation TiPopoverModule
 
-
-TiViewProxy *viewProxy;
-TiViewProxy *parentProxy;
-TiViewProxy *contentProxy;
-UIViewController *popViewController;
-UIVisualEffectView *blurEffectView;
-UIView *darkenBackgroundView;
-TiPopoverProxy *popoverProxy;
-
-
 MAKE_SYSTEM_PROP(POPOVER_ARROW_DIRECTION_UP, UIPopoverArrowDirectionUp);
 MAKE_SYSTEM_PROP(POPOVER_ARROW_DIRECTION_DOWN, UIPopoverArrowDirectionDown);
 MAKE_SYSTEM_PROP(POPOVER_ARROW_DIRECTION_LEFT, UIPopoverArrowDirectionLeft);
@@ -69,19 +59,9 @@ MAKE_SYSTEM_PROP(BLUR_EFFECT_STYLE_SYSTEM_CHROME_MATERIAL_DARK, UIBlurEffectStyl
   DebugLog(@"[DEBUG] %@ loaded", self);
 }
 
-
 - (id)createPopover:(id)args
 {
     return [[TiPopoverProxy alloc] _initWithPageContext:[self executionContext] args:args];
- // [self throwException:@"this API is not available on non iPad devices" subreason:nil location:CODELOCATION];
 }
-
-- (NSString *)exampleProp
-{
-  // Example property getter. 
-  // Call with "MyModule.exampleProp" or "MyModule.getExampleProp()"
-  return @"Titanium rocks!";
-}
-
 
 @end

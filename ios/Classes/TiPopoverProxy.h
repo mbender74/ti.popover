@@ -23,7 +23,7 @@
 //The iPadPopoverProxy should be seen more as like a window or such, because
 //The popover controller will contain the viewController, which has the view.
 //If the view had the logic, you get some nasty dependency loops.
-@interface TiPopoverProxy : TiProxy <UIPopoverControllerDelegate, UIPopoverPresentationControllerDelegate, TiProxyObserver> {
+@interface TiPopoverProxy : TiProxy <UIPopoverPresentationControllerDelegate, UIAdaptivePresentationControllerDelegate, TiProxyObserver> {
   @private
   UIViewController *viewController;
   TiViewProxy *contentViewProxy;
@@ -40,27 +40,20 @@
   TiDimension poHeight;
   BOOL deviceRotated;
   UIPopoverArrowDirection popoverArrowDirection;
+  UIVisualEffectView *popoverBlurEffectView;
+  UIView *popoverDarkenBackgroundView;
+  CGSize popoverContentSize;
 }
 - (void)updatePopover:(NSNotification *)notification;
 @end
 
 
 @interface TiPopoverBackgroundView : UIPopoverBackgroundView
-{
-    UIVisualEffectView   *popoverBackgroundBlurView;
-}
 
 @property (nonatomic, readwrite) CGFloat arrowOffset;
 @property (nonatomic, readwrite) UIPopoverArrowDirection arrowDirection;
-/**
- Adjust content inset (~ border width)
-
- @param contentInset The content inset
- */
-//+ (void)setContentInset:(CGFloat)contentInset;
 + (UIEdgeInsets)contentViewInsets;
 + (CGFloat)arrowHeight;
 + (CGFloat)arrowBase;
-
 
 @end
