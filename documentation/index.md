@@ -81,6 +81,7 @@ Creates a new Popover instance.
 | `blurBackground` | `Boolean` | Apply frosted glass blur to the background behind the popover. Default: `false`. |
 | `blurEffect` | `Number` | Blur effect style for the background (see constants). Default: `Light`. |
 | `transitionStyle` | `Number` / `String` | Animation style (see constants). Default: `scale`. |
+| `transitionDuration` | `Number` | Animation duration in seconds (0.0–1.0). Default: auto (0.38s for scale, 0.25s for fade/translate). |
 | `dismissOnTapOutside` | `Boolean` | Auto-dismiss when tapping outside. Default: `true`. |
 | `popoverBlurStyle` | `Number` | Frosted glass blur for the popover body itself. Default: `-1` (solid color). |
 | `safeAreaInsets` | `Object` | Object with `top`, `left`, `bottom`, `right` (DIP). Default: `10` on all sides. |
@@ -110,6 +111,7 @@ Presents the popover anchored to a source view.
 | `showsDimBackground` | `Boolean` | Override: dim background for this presentation.                                |
 | `blurBackground`  | `Boolean`  | Override: blur background for this presentation.                               |
 | `transitionStyle` | `Number` / `String` | Override transition for this presentation.                                  |
+| `transitionDuration` | `Number` | Override animation duration (0.0–1.0 seconds) for this presentation.       |
 | `dismissOnTapOutside` | `Boolean` | Override: dismiss on outside tap for this presentation.                       |
 | `popoverBlurStyle`| `Number`   | Override popover body blur for this presentation.                              |
 | `safeAreaInsets`  | `Object`   | Override safe area insets for this presentation.                               |
@@ -120,10 +122,11 @@ Presents the popover anchored to a source view.
 
 Dismisses the popover.
 
-| Property        | Type           | Description                                               |
-|-----------------|----------------|-----------------------------------------------------------|
-| `animated`      | `Boolean`      | Animate the dismissal. Default: `false`.                   |
-| `transitionStyle` | `Number` / `String` | Override transition for dismissal. If not passed, the presentation transition style is reused. |
+| Property           | Type             | Description                                                                 |
+|--------------------|-----------------|-----------------------------------------------------------------------------|
+| `animated`         | `Boolean`       | Animate the dismissal. Default: `false`.                                     |
+| `transitionStyle`  | `Number` / `String` | Override transition for dismissal. If not passed, the presentation transition style is reused. |
+| `transitionDuration` | `Number`      | Override animation duration (0.0–1.0 seconds) for dismissal.                |
 
 ---
 
