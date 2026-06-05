@@ -1120,7 +1120,7 @@ This approach provides maximum visual control and consistent behavior across all
 ## Author
 
 Created by Marc Bender  
-Copyright (c) 2024. All rights reserved.
+Copyright (c) 2026. All rights reserved.
 
 ## License
 

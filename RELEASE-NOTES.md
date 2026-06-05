@@ -181,7 +181,7 @@ None at this time.
 ## 👨‍💻 Author
 
 Created by Marc Bender  
-Copyright (c) 2024. All rights reserved.
+Copyright (c) 2026. All rights reserved.
 
 ## 📜 License
 
