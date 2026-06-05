@@ -607,11 +607,32 @@ static CGFloat flatValue(CGFloat value) {
 
   CGRect sourceRectInWindow = [sourceView.superview convertRect:sourceView.frame toView:nil];
   if (!CGRectEqualToRect(CGRectZero, popoverRect)) {
-    sourceRectInWindow = [sourceView.superview convertRect:popoverRect toView:nil];
+    // rect is an offset relative to the source view's position
+    // Apply the rect's origin as an offset to the button's window-frame
+    CGRect offsetRect = sourceRectInWindow;
+    offsetRect.origin.x += popoverRect.origin.x;
+    offsetRect.origin.y += popoverRect.origin.y;
+    // Use rect's width/height if explicitly set (non-zero)
+    if (popoverRect.size.width > 0) {
+      offsetRect.size.width = popoverRect.size.width;
+    }
+    if (popoverRect.size.height > 0) {
+      offsetRect.size.height = popoverRect.size.height;
+    }
+    sourceRectInWindow = offsetRect;
   }
 
-  // Get the key window as our container
-  UIView *keyWindow = [[UIApplication sharedApplication] keyWindow];
+  // Get the key window as our container (scene-aware, iOS 13+)
+  UIView *keyWindow = nil;
+  for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+    for (UIWindow *w in scene.windows) {
+      if (w.isKeyWindow) {
+        keyWindow = w;
+        break;
+      }
+    }
+    if (keyWindow) break;
+  }
   if (!keyWindow) {
     keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
   }
