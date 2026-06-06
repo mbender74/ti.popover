@@ -167,6 +167,7 @@ var popover = ti_popover.createPopover({
     shadowColor: '#000000',
     shadowOpacity: 0.3,
     shadowRadius: 15,
+    shadowOffset: { x: 0, y: 4 },
 
     // Corner
     cornerRadius: 12,
@@ -214,6 +215,7 @@ Creates a new popover instance.
 | `shadowColor` | `Color` | `'#000000'` | Shadow color |
 | `shadowOpacity` | `Number` | `0` | Shadow opacity (0-1) |
 | `shadowRadius` | `Number` | `0` | Shadow blur radius |
+| `shadowOffset` | `Object` | `{x:0, y:0}` | Shadow offset `{x,y}` in DIP |
 | `cornerRadius` | `Number` | `0` | Corner radius in DIP |
 | `transitionStyle` | `Constant` | `TRANSITION_STYLE_SCALE` | Presentation/dismissal animation |
 | `transitionDuration` | `Number` | *auto* | Animation duration in seconds (0 = use defaults) |
@@ -246,7 +248,7 @@ Hides the popover.
 
 - `show` — Fired when the popover is presented
 - `hide` — Fired when the popover dismissal animation starts
-- `dismiss` — Fired when the popover is fully dismissed
+- `closed` — Fired when the popover is fully dismissed
 
 ### Properties
 

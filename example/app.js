@@ -341,6 +341,7 @@ btnBorder.addEventListener('click', function() {
         shadowColor: '#3f51b5',
         shadowOpacity: 0.4,
         shadowRadius: 12,
+        shadowOffset: { x: 0, y: 6 },
         cornerRadius: 12
     });
 

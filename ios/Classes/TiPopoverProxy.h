@@ -51,7 +51,6 @@
   NSCondition *closingCondition;
   TiDimension poWidth;
   TiDimension poHeight;
-  BOOL deviceRotated;
   UIPopoverArrowDirection popoverArrowDirection;
 
   // Background / dim overlays (global, on key window)
@@ -64,6 +63,7 @@
   UIView *_backgroundView;          // background inside popover shape (solid color or blur)
   UIVisualEffectView *_popoverBodyBlurView; // blur effect inside popover shape
   UITapGestureRecognizer *_outsideTapGesture;
+  CAShapeLayer *_borderLayer;
 
   // Appearance
   CGFloat _cornerRadius;
@@ -73,6 +73,7 @@
   CGFloat _shadowRadius;
   CGFloat _shadowOpacity;
   UIColor *_shadowColor;
+  CGSize _shadowOffset;
   UIColor *_popoverBackgroundColor;
   BOOL _showsArrow;
   BOOL _showsDimBackground;

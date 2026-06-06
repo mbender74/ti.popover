@@ -50,6 +50,7 @@ static NSArray *popoverSequence;
     _shadowRadius = TI_POPOVER_SHADOW_RADIUS;
     _shadowOpacity = TI_POPOVER_SHADOW_OPACITY;
     _shadowColor = [[UIColor blackColor] retain];
+    _shadowOffset = CGSizeMake(0, 0);
     _borderColor = nil;
     _popoverBackgroundColor = nil;
     _showsArrow = YES;
@@ -82,6 +83,7 @@ static NSArray *popoverSequence;
   RELEASE_TO_NIL(popoverBlurEffectView);
   RELEASE_TO_NIL(_popoverBodyBlurView);
   RELEASE_TO_NIL(popoverDarkenBackgroundView);
+  RELEASE_TO_NIL(_borderLayer);
   [_borderColor release];
   [_shadowColor release];
   [_popoverBackgroundColor release];
@@ -190,6 +192,38 @@ static NSArray *popoverSequence;
     }
   }
   [self replaceValue:actualArgs forKey:@"passthroughViews" notification:NO];
+}
+
+- (void)setShadowColor:(id)value
+{
+  ENSURE_SINGLE_ARG(value, NSObject);
+  [_shadowColor release];
+  _shadowColor = [[[TiUtils colorValue:value] _color] retain];
+  [self replaceValue:value forKey:@"shadowColor" notification:NO];
+}
+
+- (void)setShadowRadius:(id)value
+{
+  ENSURE_SINGLE_ARG(value, NSNumber);
+  _shadowRadius = [TiUtils floatValue:value];
+  [self replaceValue:value forKey:@"shadowRadius" notification:NO];
+}
+
+- (void)setShadowOpacity:(id)value
+{
+  ENSURE_SINGLE_ARG(value, NSNumber);
+  _shadowOpacity = [TiUtils floatValue:value];
+  [self replaceValue:value forKey:@"shadowOpacity" notification:NO];
+}
+
+- (void)setShadowOffset:(id)value
+{
+  ENSURE_SINGLE_ARG(value, NSDictionary);
+  _shadowOffset = CGSizeMake(
+    [TiUtils floatValue:@"x" properties:value def:0],
+    [TiUtils floatValue:@"y" properties:value def:0]
+  );
+  [self replaceValue:value forKey:@"shadowOffset" notification:NO];
 }
 
 #pragma mark - Content Size
@@ -485,14 +519,12 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)show:(id)args
 {
-  //NSLog(@"[ti.popover] show: called — popoverInitialized=%d, tiCurrentlyDisplaying=%d, currentTiPopover=%p, self=%p",
 
   if (tiPopOverCondition == nil) {
     tiPopOverCondition = [[NSCondition alloc] init];
   }
 
   if (popoverInitialized) {
-    //NSLog(@"[ti.popover] show: popover already initialized — ignoring duplicate call");
     DebugLog(@"Popover is already showing. Ignoring call");
     return;
   }
@@ -514,16 +546,6 @@ static CGFloat flatValue(CGFloat value) {
 
   animated = [TiUtils boolValue:@"animated" properties:args def:YES];
 
-  // Override transition duration if passed to show()
-  CGFloat showDuration = 0;
-  id showDurationVal = [args valueForKey:@"transitionDuration"];
-  if (showDurationVal) {
-    showDuration = [showDurationVal doubleValue];
-    if (showDuration > 0) {
-      _transitionDuration = showDuration;
-    }
-  }
-
   popoverView = [[args objectForKey:@"view"] retain];
   NSDictionary *rectProps = [args objectForKey:@"rect"];
   if (IS_NULL_OR_NIL(rectProps)) {
@@ -539,14 +561,11 @@ static CGFloat flatValue(CGFloat value) {
   }
 
   [tiPopOverCondition lock];
-  //NSLog(@"[ti.popover] show: checking tiCurrentlyDisplaying=%d, currentTiPopover=%p", tiCurrentlyDisplaying, currentTiPopover);
   if (tiCurrentlyDisplaying) {
-    //NSLog(@"[ti.popover] show: another popover is showing — hiding it first");
     [currentTiPopover hide:nil];
     [tiPopOverCondition wait];
   }
   tiCurrentlyDisplaying = YES;
-  //NSLog(@"[ti.popover] show: setting tiCurrentlyDisplaying=YES, self=%p", self);
   [tiPopOverCondition unlock];
   popoverInitialized = YES;
 
@@ -571,8 +590,23 @@ static CGFloat flatValue(CGFloat value) {
   id shadowRadiusVal = [args valueForKey:@"shadowRadius"];
   if (shadowRadiusVal) _shadowRadius = [TiUtils floatValue:shadowRadiusVal];
 
+  id shadowColorVal = [args valueForKey:@"shadowColor"];
+  if (shadowColorVal) {
+    [_shadowColor release];
+    _shadowColor = [[[TiUtils colorValue:shadowColorVal] _color] retain];
+  }
+
   id shadowOpacityVal = [args valueForKey:@"shadowOpacity"];
   if (shadowOpacityVal) _shadowOpacity = [TiUtils floatValue:shadowOpacityVal];
+
+  id shadowOffsetVal = [args valueForKey:@"shadowOffset"];
+  if (shadowOffsetVal) {
+    NSDictionary *offsetDict = shadowOffsetVal;
+    _shadowOffset = CGSizeMake(
+      [TiUtils floatValue:@"x" properties:offsetDict def:0],
+      [TiUtils floatValue:@"y" properties:offsetDict def:0]
+    );
+  }
 
   _showsArrow = [TiUtils boolValue:@"showsArrow" properties:args def:YES];
   _showsDimBackground = [TiUtils boolValue:@"showsDimBackground" properties:args def:NO];
@@ -621,10 +655,7 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)presentPopover
 {
-  //NSLog(@"[ti.popover] presentPopover — self=%p, popoverInitialized=%d", self, popoverInitialized);
-  deviceRotated = NO;
   currentTiPopover = self;
-  //NSLog(@"[ti.popover] presentPopover: contentViewProxy=%p, popoverView=%p", contentViewProxy, popoverView);
   [contentViewProxy setProxyObserver:self];
 
   // Get source view and its frame in window coordinates
@@ -686,9 +717,6 @@ static CGFloat flatValue(CGFloat value) {
   popoverArrowDirection = [self autoArrowDirectionForContentSize:contentSize
                                                       sourceRect:sourceRectInWindow
                                                    containerRect:containerRect];
-
-  //NSLog(@"[ti.popover] presentPopover: contentSize=(%.1f, %.1f), arrowDirection=%ld, showsArrow=%d, showsDimBackground=%d",
-  //NSLog(@"[ti.popover] presentPopover: sourceRectInWindow=%@, containerRect=%@",
 
   // Get the base direction (handles extended directions like RIGHT_TOP)
   UIPopoverArrowDirection baseDirection = baseArrowDirection(popoverArrowDirection);
@@ -802,9 +830,7 @@ static CGFloat flatValue(CGFloat value) {
   popoverOrigin.x = MIN(popoverOrigin.x, CGRectGetMaxX(safeContainerRect) - popoverSize.width);
   popoverOrigin.y = MIN(popoverOrigin.y, CGRectGetMaxY(safeContainerRect) - popoverSize.height);
 
-  CGRect popoverRect = {popoverOrigin, popoverSize};
-
-  //NSLog(@"[ti.popover] presentPopover: popoverSize=(%.1f, %.1f), popoverRect=%@, arrowPoint=(%.1f, %.1f)",
+  CGRect finalPopoverRect = {popoverOrigin, popoverSize};
 
   // Compute content rect (inside popover, offset by arrow)
   CGFloat arrowOffset = _showsArrow ? _arrowSize.height : 0;
@@ -830,8 +856,6 @@ static CGFloat flatValue(CGFloat value) {
   // Convert arrow point to popover-local coordinates
   CGPoint arrowPointInPopover = CGPointMake(arrowPoint.x - popoverOrigin.x, arrowPoint.y - popoverOrigin.y);
 
-  //NSLog(@"[ti.popover] presentPopover: arrowPointInPopover=(%.1f, %.1f), contentRect=%@, arrowOffset=%.1f",
-
   // Clamp arrow point to prevent overlapping corners
   // Only clamp the cross-axis coordinate (x for vertical arrows, y for horizontal)
   if (_showsArrow) {
@@ -856,11 +880,11 @@ static CGFloat flatValue(CGFloat value) {
     }
   }
 
-  //NSLog(@"[ti.popover] presentPopover: after clamp arrowPointInPopover=(%.1f, %.1f)", arrowPointInPopover.x, arrowPointInPopover.y);
 
   // Create container view (full screen, for hit testing)
   _containerView = [[UIView alloc] initWithFrame:keyWindow.bounds];
   _containerView.backgroundColor = [UIColor clearColor];
+  _containerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
   _containerView.accessibilityViewIsModal = YES;
 
   // Dim background
@@ -883,11 +907,11 @@ static CGFloat flatValue(CGFloat value) {
   }
 
   // Create popover container view (clipped to shape)
-  _popoverContainerView = [[UIView alloc] initWithFrame:popoverRect];
+  _popoverContainerView = [[UIView alloc] initWithFrame:finalPopoverRect];
   _popoverContainerView.backgroundColor = [UIColor clearColor];
 
   // Generate bezier path for the popover shape
-  UIBezierPath *popoverPath = [self popoverPathWithRect:popoverRect
+  UIBezierPath *popoverPath = [self popoverPathWithRect:finalPopoverRect
                                              arrowPoint:arrowPointInPopover
                                          arrowDirection:baseDirection
                                             contentRect:contentRect];
@@ -987,25 +1011,24 @@ static CGFloat flatValue(CGFloat value) {
   [contentViewProxy view].frame = contentFrame;
   [_popoverContainerView addSubview:[contentViewProxy view]];
 
-  //NSLog(@"[ti.popover] presentPopover: contentFrame=%@, contentInsets=(%.1f, %.1f, %.1f, %.1f)",
-  //NSLog(@"[ti.popover] presentPopover: shadowOpacity=%.2f, shadowRadius=%.1f, borderWidth=%.1f, showsDimBackground=%d, blurBackground=%d",
-
-  // Shadow — apply directly to popover container layer
+  // Shadow — apply directly to popover container layer with explicit path for GPU performance
   if (_shadowOpacity > 0 && _shadowRadius > 0) {
     _popoverContainerView.layer.shadowColor = _shadowColor.CGColor;
     _popoverContainerView.layer.shadowRadius = _shadowRadius;
     _popoverContainerView.layer.shadowOpacity = _shadowOpacity;
-    _popoverContainerView.layer.shadowOffset = CGSizeMake(0, 0);
+    _popoverContainerView.layer.shadowOffset = _shadowOffset;
+    _popoverContainerView.layer.shadowPath = popoverPath.CGPath;
   }
 
   // Border — add as a stroke-only shape layer
   if (_borderWidth > 0 && _borderColor) {
-    CAShapeLayer *borderLayer = [[CAShapeLayer alloc] init];
-    borderLayer.path = popoverPath.CGPath;
-    borderLayer.fillColor = nil;
-    borderLayer.strokeColor = _borderColor.CGColor;
-    borderLayer.lineWidth = _borderWidth;
-    [_popoverContainerView.layer addSublayer:borderLayer];
+    [_borderLayer release];
+    _borderLayer = [[CAShapeLayer alloc] init];
+    _borderLayer.path = popoverPath.CGPath;
+    _borderLayer.fillColor = nil;
+    _borderLayer.strokeColor = _borderColor.CGColor;
+    _borderLayer.lineWidth = _borderWidth;
+    [_popoverContainerView.layer addSublayer:_borderLayer];
   }
 
   // Add popover to container
@@ -1162,9 +1185,7 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)hide:(id)args
 {
-  //NSLog(@"[ti.popover] hide: called — self=%p, popoverInitialized=%d, isDismissing=%d", self, popoverInitialized, isDismissing);
   if (!popoverInitialized) {
-    //NSLog(@"[ti.popover] hide: popover not showing — ignoring");
     DebugLog(@"Popover is not showing. Ignoring call");
     return;
   }
@@ -1185,7 +1206,7 @@ static CGFloat flatValue(CGFloat value) {
       _transitionDuration = hideDuration;
     }
   }
-  //NSLog(@"[ti.popover] hide: isAnimated=%d, transitionStyle=%ld", isAnimated, (long)_transitionStyle);
+  [self fireEvent:@"hide" withObject:nil];
 
   [closingCondition lock];
   isDismissing = YES;
@@ -1248,7 +1269,6 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)dismissAndCleanup
 {
-  //NSLog(@"[ti.popover] dismissAndCleanup — self=%p", self);
   if (popoverBlurEffectView) {
       [popoverBlurEffectView removeFromSuperview];
       popoverBlurEffectView = nil;
@@ -1264,17 +1284,12 @@ static CGFloat flatValue(CGFloat value) {
 - (void)outsideTap:(UITapGestureRecognizer *)gesture
 {
   if (!_dismissOnTapOutside) {
-    //NSLog(@"[ti.popover] outsideTap: dismissOnTapOutside is NO — ignoring");
     return;
   }
   CGPoint location = [gesture locationInView:_popoverContainerView];
-  //NSLog(@"[ti.popover] outsideTap: location=(%.1f, %.1f), popoverContainerView.bounds=%@",
   if (![_popoverContainerView pointInside:location withEvent:nil]) {
-    //NSLog(@"[ti.popover] outsideTap: point is outside popover — dismissing");
     [self fireEvent:@"hide" withObject:nil];
     [self hide:@{@"animated": @YES}];
-  } else {
-    //NSLog(@"[ti.popover] outsideTap: point is inside popover — ignoring");
   }
 }
 
@@ -1282,10 +1297,8 @@ static CGFloat flatValue(CGFloat value) {
 
 - (void)cleanup
 {
-  //NSLog(@"[ti.popover] cleanup — self=%p, popoverInitialized=%d", self, popoverInitialized);
   [tiPopOverCondition lock];
   tiCurrentlyDisplaying = NO;
-  //NSLog(@"[ti.popover] cleanup: setting tiCurrentlyDisplaying=NO, broadcasting condition");
   if (currentTiPopover == self) {
     currentTiPopover = nil;
   }
@@ -1317,6 +1330,10 @@ static CGFloat flatValue(CGFloat value) {
   [_popoverBodyBlurView removeFromSuperview];
   [_popoverBodyBlurView release];
   _popoverBodyBlurView = nil;
+
+  [_borderLayer removeFromSuperlayer];
+  [_borderLayer release];
+  _borderLayer = nil;
 
   [_containerView removeFromSuperview];
   [_containerView release];
@@ -1376,21 +1393,30 @@ static CGFloat flatValue(CGFloat value) {
 - (void)deviceRotated:(NSNotification *)sender
 {
   if (!popoverInitialized) return;
-  deviceRotated = YES;
   TiThreadPerformOnMainThread(^{ [self repositionPopover]; }, NO);
 }
 
 - (void)updatePopover:(NSNotification *)notification
 {
   if (!popoverInitialized) return;
-  deviceRotated = YES;
   TiThreadPerformOnMainThread(^{ [self repositionPopover]; }, NO);
 }
 
 - (void)repositionPopover
 {
-  UIView *keyWindow = [[UIApplication sharedApplication] keyWindow];
-  if (!keyWindow) keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
+  UIView *keyWindow = nil;
+  for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+    for (UIWindow *w in scene.windows) {
+      if (w.isKeyWindow) {
+        keyWindow = w;
+        break;
+      }
+    }
+    if (keyWindow) break;
+  }
+  if (!keyWindow) {
+    keyWindow = [[[UIApplication sharedApplication] windows] firstObject];
+  }
   CGRect containerRect = keyWindow.bounds;
 
   UIView *sourceView = nil;
@@ -1401,10 +1427,26 @@ static CGFloat flatValue(CGFloat value) {
   if (!sourceView || !sourceView.superview) return;
 
   CGRect sourceRectInWindow = [sourceView.superview convertRect:sourceView.frame toView:nil];
-  if (!CGRectEqualToRect(CGRectZero, popoverRect))
-    sourceRectInWindow = [sourceView.superview convertRect:popoverRect toView:nil];
+  if (!CGRectEqualToRect(CGRectZero, popoverRect)) {
+    // rect is a relative offset (v2.0.0 behavior)
+    CGRect offsetRect = sourceRectInWindow;
+    offsetRect.origin.x += popoverRect.origin.x;
+    offsetRect.origin.y += popoverRect.origin.y;
+    if (popoverRect.size.width > 0) {
+      offsetRect.size.width = popoverRect.size.width;
+    }
+    if (popoverRect.size.height > 0) {
+      offsetRect.size.height = popoverRect.size.height;
+    }
+    sourceRectInWindow = offsetRect;
+  }
 
+  // Recalculate content size in case layout changed
+  [self updateContentSize];
   CGSize contentSize = popoverContentSize;
+  contentSize.width = MAX(contentSize.width, _cornerRadius * 2);
+  contentSize.height = MAX(contentSize.height, _cornerRadius * 2);
+
   CGFloat arrowExt = _showsArrow ? _arrowSize.height : 0;
   UIPopoverArrowDirection baseDir = baseArrowDirection(popoverArrowDirection);
   CGSize popoverSize;
@@ -1469,8 +1511,125 @@ static CGFloat flatValue(CGFloat value) {
   popoverOrigin.x = MIN(popoverOrigin.x, CGRectGetMaxX(safeContainerRect) - popoverSize.width);
   popoverOrigin.y = MIN(popoverOrigin.y, CGRectGetMaxY(safeContainerRect) - popoverSize.height);
 
+  // Recalculate contentRect and arrowPointInPopover for mask update
+  CGFloat arrowOffset = _showsArrow ? _arrowSize.height : 0;
+  CGRect contentRect;
+  switch (baseDir) {
+    case UIPopoverArrowDirectionUp:
+      contentRect = CGRectMake(0, arrowOffset, contentSize.width, contentSize.height);
+      break;
+    case UIPopoverArrowDirectionDown:
+      contentRect = CGRectMake(0, 0, contentSize.width, contentSize.height);
+      break;
+    case UIPopoverArrowDirectionLeft:
+      contentRect = CGRectMake(arrowOffset, 0, contentSize.width, contentSize.height);
+      break;
+    case UIPopoverArrowDirectionRight:
+      contentRect = CGRectMake(0, 0, contentSize.width, contentSize.height);
+      break;
+    default:
+      contentRect = CGRectMake(0, arrowOffset, contentSize.width, contentSize.height);
+      break;
+  }
+
+  CGPoint arrowPointInPopover = CGPointMake(arrowPoint.x - popoverOrigin.x, arrowPoint.y - popoverOrigin.y);
+  if (_showsArrow) {
+    CGFloat minX = _cornerRadius + _arrowSize.width / 2;
+    CGFloat maxX = popoverSize.width - minX;
+    CGFloat minY = _cornerRadius + _arrowSize.width / 2;
+    CGFloat maxY = popoverSize.height - minY;
+    switch (baseDir) {
+      case UIPopoverArrowDirectionUp:
+      case UIPopoverArrowDirectionDown:
+        arrowPointInPopover.x = MAX(minX, MIN(arrowPointInPopover.x, maxX));
+        break;
+      case UIPopoverArrowDirectionLeft:
+      case UIPopoverArrowDirectionRight:
+        arrowPointInPopover.y = MAX(minY, MIN(arrowPointInPopover.y, maxY));
+        break;
+      default:
+        arrowPointInPopover.x = MAX(minX, MIN(arrowPointInPopover.x, maxX));
+        break;
+    }
+  }
+
+  // Reset anchor point / transform that may have been altered by scale animation
+  _popoverContainerView.transform = CGAffineTransformIdentity;
+  _popoverContainerView.layer.anchorPoint = CGPointMake(0.5, 0.5);
+  _popoverContainerView.layer.position = CGPointMake(
+      _popoverContainerView.frame.origin.x + _popoverContainerView.bounds.size.width / 2,
+      _popoverContainerView.frame.origin.y + _popoverContainerView.bounds.size.height / 2
+  );
+
   [UIView animateWithDuration:0.25 animations:^{
-    _popoverContainerView.frame = CGRectMake(popoverOrigin.x, popoverOrigin.y, popoverSize.width, popoverSize.height);
+    _popoverContainerView.bounds = CGRectMake(0, 0, popoverSize.width, popoverSize.height);
+    _popoverContainerView.center = CGPointMake(popoverOrigin.x + popoverSize.width / 2,
+                                              popoverOrigin.y + popoverSize.height / 2);
+
+    // Update subviews to match new bounds
+    _backgroundView.frame = _popoverContainerView.bounds;
+    if (_popoverBodyBlurView) {
+      _popoverBodyBlurView.frame = _popoverContainerView.bounds;
+    }
+
+    // Update content frame
+    UIEdgeInsets contentInsets = UIEdgeInsetsZero;
+    LayoutConstraint *cp = [contentViewProxy layoutProperties];
+    CGSize screenSize = [[UIScreen mainScreen] bounds].size;
+#ifndef TI_USE_AUTOLAYOUT
+    if (TiDimensionIsDip(cp->left)) {
+      contentInsets.left += TiDimensionCalculateValue(cp->left, screenSize.width);
+    }
+    if (TiDimensionIsDip(cp->top)) {
+      contentInsets.top += TiDimensionCalculateValue(cp->top, screenSize.height);
+    }
+    if (TiDimensionIsDip(cp->right)) {
+      contentInsets.right += TiDimensionCalculateValue(cp->right, screenSize.width);
+    }
+    if (TiDimensionIsDip(cp->bottom)) {
+      contentInsets.bottom += TiDimensionCalculateValue(cp->bottom, screenSize.height);
+    }
+#endif
+    if (_showsArrow) {
+      switch (baseDir) {
+        case UIPopoverArrowDirectionUp:
+          contentInsets.top += _arrowSize.height;
+          break;
+        case UIPopoverArrowDirectionDown:
+          contentInsets.bottom += _arrowSize.height;
+          break;
+        case UIPopoverArrowDirectionLeft:
+          contentInsets.left += _arrowSize.height;
+          break;
+        case UIPopoverArrowDirectionRight:
+          contentInsets.right += _arrowSize.height;
+          break;
+        default:
+          contentInsets.top += _arrowSize.height;
+          break;
+      }
+    }
+    [contentViewProxy view].frame = CGRectMake(
+        contentInsets.left,
+        contentInsets.top,
+        _popoverContainerView.bounds.size.width - contentInsets.left - contentInsets.right,
+        _popoverContainerView.bounds.size.height - contentInsets.top - contentInsets.bottom
+    );
+
+    // Update mask path
+    UIBezierPath *newPath = [self popoverPathWithRect:_popoverContainerView.bounds
+                                           arrowPoint:arrowPointInPopover
+                                       arrowDirection:baseDir
+                                          contentRect:contentRect];
+    CAShapeLayer *maskLayer = (CAShapeLayer *)_popoverContainerView.layer.mask;
+    if (maskLayer) {
+      maskLayer.path = newPath.CGPath;
+    }
+
+    // Update border path
+    if (_borderLayer) {
+      _borderLayer.path = newPath.CGPath;
+    }
   }];
 }
 
