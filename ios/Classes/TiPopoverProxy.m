@@ -1291,7 +1291,6 @@ static CGFloat flatValue(CGFloat value) {
   }
   CGPoint location = [gesture locationInView:_popoverContainerView];
   if (![_popoverContainerView pointInside:location withEvent:nil]) {
-    [self fireEvent:@"hide" withObject:nil];
     [self hide:@{@"animated": @YES}];
   }
 }
