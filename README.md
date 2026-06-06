@@ -1,4 +1,4 @@
-# ti.popover
+# ti.popover for Titanium Mobile Cross Platform Framework (https://titaniumsdk.com)
 
 A fully custom iOS Popover module implementation for Titanium Mobile.
 
