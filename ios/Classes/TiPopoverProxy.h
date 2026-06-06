@@ -59,6 +59,7 @@
 
   // Popover drawing and positioning
   UIView *_containerView;
+  UIView *_shadowView;              // shadow carrier (unmasked, behind popover)
   UIView *_popoverContainerView;   // clipped to popover shape via CAShapeLayer mask
   UIView *_backgroundView;          // background inside popover shape (solid color or blur)
   UIVisualEffectView *_popoverBodyBlurView; // blur effect inside popover shape

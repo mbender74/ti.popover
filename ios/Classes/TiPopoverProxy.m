@@ -84,6 +84,7 @@ static NSArray *popoverSequence;
   RELEASE_TO_NIL(_popoverBodyBlurView);
   RELEASE_TO_NIL(popoverDarkenBackgroundView);
   RELEASE_TO_NIL(_borderLayer);
+  RELEASE_TO_NIL(_shadowView);
   [_borderColor release];
   [_shadowColor release];
   [_popoverBackgroundColor release];
@@ -906,15 +907,29 @@ static CGFloat flatValue(CGFloat value) {
     [_containerView addSubview:popoverBlurEffectView];
   }
 
-  // Create popover container view (clipped to shape)
-  _popoverContainerView = [[UIView alloc] initWithFrame:finalPopoverRect];
-  _popoverContainerView.backgroundColor = [UIColor clearColor];
-
   // Generate bezier path for the popover shape
   UIBezierPath *popoverPath = [self popoverPathWithRect:finalPopoverRect
                                              arrowPoint:arrowPointInPopover
                                          arrowDirection:baseDirection
                                             contentRect:contentRect];
+
+  // Shadow carrier — unmasked container that holds the clipped popover
+  _shadowView = [[UIView alloc] initWithFrame:finalPopoverRect];
+  _shadowView.backgroundColor = [UIColor clearColor];
+  if (_shadowOpacity > 0 && _shadowRadius > 0) {
+    _shadowView.layer.shadowColor = _shadowColor.CGColor;
+    _shadowView.layer.shadowRadius = _shadowRadius;
+    _shadowView.layer.shadowOpacity = _shadowOpacity;
+    _shadowView.layer.shadowOffset = _shadowOffset;
+    _shadowView.layer.shadowPath = popoverPath.CGPath;
+  }
+  [_containerView addSubview:_shadowView];
+
+  // Create popover container view (clipped to shape) — sits inside shadow carrier
+  _popoverContainerView = [[UIView alloc] initWithFrame:_shadowView.bounds];
+  _popoverContainerView.backgroundColor = [UIColor clearColor];
+  _popoverContainerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  [_shadowView addSubview:_popoverContainerView];
 
   // Apply mask
   CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
@@ -1011,15 +1026,6 @@ static CGFloat flatValue(CGFloat value) {
   [contentViewProxy view].frame = contentFrame;
   [_popoverContainerView addSubview:[contentViewProxy view]];
 
-  // Shadow — apply directly to popover container layer with explicit path for GPU performance
-  if (_shadowOpacity > 0 && _shadowRadius > 0) {
-    _popoverContainerView.layer.shadowColor = _shadowColor.CGColor;
-    _popoverContainerView.layer.shadowRadius = _shadowRadius;
-    _popoverContainerView.layer.shadowOpacity = _shadowOpacity;
-    _popoverContainerView.layer.shadowOffset = _shadowOffset;
-    _popoverContainerView.layer.shadowPath = popoverPath.CGPath;
-  }
-
   // Border — add as a stroke-only shape layer
   if (_borderWidth > 0 && _borderColor) {
     [_borderLayer release];
@@ -1031,9 +1037,6 @@ static CGFloat flatValue(CGFloat value) {
     [_popoverContainerView.layer addSublayer:_borderLayer];
   }
 
-  // Add popover to container
-  [self->_containerView addSubview:_popoverContainerView];
-
   // Outside tap gesture
   _outsideTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(outsideTap:)];
   _outsideTapGesture.cancelsTouchesInView = NO;
@@ -1042,27 +1045,27 @@ static CGFloat flatValue(CGFloat value) {
   // Add container to key window
   [keyWindow addSubview:_containerView];
 
-  // Animate presentation
+  // Animate presentation — animate the shadow carrier so shadow moves with content
   if (animated) {
     if (_showsArrow && _transitionStyle == 0) {
       // Scale transition with anchor at arrow point
       CGPoint anchorPoint = [self anchorPointForArrowDirection:popoverArrowDirection arrowPoint:arrowPointInPopover popoverSize:popoverSize];
-      CGPoint oldOrigin = _popoverContainerView.frame.origin;
-      _popoverContainerView.layer.anchorPoint = anchorPoint;
-      _popoverContainerView.layer.position = CGPointMake(
-          oldOrigin.x + anchorPoint.x * _popoverContainerView.bounds.size.width,
-          oldOrigin.y + anchorPoint.y * _popoverContainerView.bounds.size.height
+      CGPoint oldOrigin = _shadowView.frame.origin;
+      _shadowView.layer.anchorPoint = anchorPoint;
+      _shadowView.layer.position = CGPointMake(
+          oldOrigin.x + anchorPoint.x * _shadowView.bounds.size.width,
+          oldOrigin.y + anchorPoint.y * _shadowView.bounds.size.height
       );
-      _popoverContainerView.alpha = 0.0;
-      _popoverContainerView.transform = CGAffineTransformMakeScale(0.01, 0.01);
+      _shadowView.alpha = 0.0;
+      _shadowView.transform = CGAffineTransformMakeScale(0.01, 0.01);
     } else if (_transitionStyle == 1) {
       // Fade transition
-      _popoverContainerView.alpha = 0.0;
+      _shadowView.alpha = 0.0;
     } else if (_transitionStyle == 2) {
       // Translate transition
-      _popoverContainerView.alpha = 0.0;
+      _shadowView.alpha = 0.0;
       CGPoint offset = [self translateOffsetForArrowDirection:popoverArrowDirection];
-      _popoverContainerView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
+      _shadowView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
     }
     // transitionStyle == 3 (None): no initial setup needed
 
@@ -1080,8 +1083,8 @@ static CGFloat flatValue(CGFloat value) {
 
     // Popover animation
     void (^animations)(void) = ^{
-      self->_popoverContainerView.alpha = 1.0;
-      self->_popoverContainerView.transform = CGAffineTransformIdentity;
+      self->_shadowView.alpha = 1.0;
+      self->_shadowView.transform = CGAffineTransformIdentity;
     };
 
     if (_transitionStyle == 0 && _showsArrow) {
@@ -1094,7 +1097,7 @@ static CGFloat flatValue(CGFloat value) {
       }];
     }
   } else {
-    _popoverContainerView.alpha = 1.0;
+    _shadowView.alpha = 1.0;
     if (popoverDarkenBackgroundView) {
       popoverDarkenBackgroundView.alpha = 1.0;
     }
@@ -1229,22 +1232,22 @@ static CGFloat flatValue(CGFloat value) {
               }
 
               void (^dismissAnimations)(void) = ^{
-                  self->_popoverContainerView.alpha = 0.0;
+                  self->_shadowView.alpha = 0.0;
                   switch (self->_transitionStyle) {
                       case 0: // Scale
-                          self->_popoverContainerView.transform = CGAffineTransformMakeScale(0.01, 0.01);
+                          self->_shadowView.transform = CGAffineTransformMakeScale(0.01, 0.01);
                           break;
                       case 1: // Fade — already handled by alpha
                           break;
                       case 2: { // Translate
                           CGPoint offset = [self translateOffsetForArrowDirection:baseArrowDirection(self->popoverArrowDirection)];
-                          self->_popoverContainerView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
+                          self->_shadowView.transform = CGAffineTransformMakeTranslation(offset.x, offset.y);
                           break;
                       }
                       case 3: // None
                           break;
                       default:
-                          self->_popoverContainerView.transform = CGAffineTransformMakeScale(0.01, 0.01);
+                          self->_shadowView.transform = CGAffineTransformMakeScale(0.01, 0.01);
                           break;
                   }
               };
@@ -1334,6 +1337,10 @@ static CGFloat flatValue(CGFloat value) {
   [_borderLayer removeFromSuperlayer];
   [_borderLayer release];
   _borderLayer = nil;
+
+  [_shadowView removeFromSuperview];
+  [_shadowView release];
+  _shadowView = nil;
 
   [_containerView removeFromSuperview];
   [_containerView release];
@@ -1554,19 +1561,19 @@ static CGFloat flatValue(CGFloat value) {
   }
 
   // Reset anchor point / transform that may have been altered by scale animation
-  _popoverContainerView.transform = CGAffineTransformIdentity;
-  _popoverContainerView.layer.anchorPoint = CGPointMake(0.5, 0.5);
-  _popoverContainerView.layer.position = CGPointMake(
-      _popoverContainerView.frame.origin.x + _popoverContainerView.bounds.size.width / 2,
-      _popoverContainerView.frame.origin.y + _popoverContainerView.bounds.size.height / 2
+  _shadowView.transform = CGAffineTransformIdentity;
+  _shadowView.layer.anchorPoint = CGPointMake(0.5, 0.5);
+  _shadowView.layer.position = CGPointMake(
+      _shadowView.frame.origin.x + _shadowView.bounds.size.width / 2,
+      _shadowView.frame.origin.y + _shadowView.bounds.size.height / 2
   );
 
   [UIView animateWithDuration:0.25 animations:^{
-    _popoverContainerView.bounds = CGRectMake(0, 0, popoverSize.width, popoverSize.height);
-    _popoverContainerView.center = CGPointMake(popoverOrigin.x + popoverSize.width / 2,
-                                              popoverOrigin.y + popoverSize.height / 2);
+    _shadowView.bounds = CGRectMake(0, 0, popoverSize.width, popoverSize.height);
+    _shadowView.center = CGPointMake(popoverOrigin.x + popoverSize.width / 2,
+                                    popoverOrigin.y + popoverSize.height / 2);
 
-    // Update subviews to match new bounds
+    // Update subviews to match new bounds (popoverContainerView auto-resizes with shadowView)
     _backgroundView.frame = _popoverContainerView.bounds;
     if (_popoverBodyBlurView) {
       _popoverBodyBlurView.frame = _popoverContainerView.bounds;
@@ -1629,6 +1636,11 @@ static CGFloat flatValue(CGFloat value) {
     // Update border path
     if (_borderLayer) {
       _borderLayer.path = newPath.CGPath;
+    }
+
+    // Update shadow path on carrier
+    if (_shadowView) {
+      _shadowView.layer.shadowPath = newPath.CGPath;
     }
   }];
 }

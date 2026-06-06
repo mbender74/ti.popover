@@ -73,8 +73,10 @@ Creates a new Popover instance.
 | `arrowHeight` | `Number` | Arrow height (tip-to-base) in DIP. Default: `15`. |
 | `borderWidth` | `Number` | Border stroke width in DIP. Default: `0` (no border). |
 | `borderColor` | `String` | Border color as hex string (e.g. `'#333333'`). Default: none. |
+| `shadowColor` | `String` | Shadow color as hex string (e.g. `'#000000'`). Default: `'#000000'`. |
 | `shadowRadius` | `Number` | Shadow blur radius in DIP. Default: `5`. |
 | `shadowOpacity` | `Number` | Shadow opacity (0.0–1.0). Default: `0.3`. |
+| `shadowOffset` | `Object` | Shadow offset as `{x, y}` in DIP. Default: `{x:0, y:0}`. |
 | `backgroundColor` | `String` | Popover body background color. Default: white (`#ffffff`). |
 | `showsArrow` | `Boolean` | Whether to display the arrow. Default: `true`. |
 | `showsDimBackground` | `Boolean` | Dim the background behind the popover. Default: `false`. |
@@ -106,6 +108,8 @@ Presents the popover anchored to a source view.
 | `borderColor`     | `String`   | Override border color for this presentation.                                   |
 | `shadowRadius`    | `Number`   | Override shadow radius for this presentation.                                  |
 | `shadowOpacity`   | `Number`   | Override shadow opacity for this presentation.                                 |
+| `shadowColor`     | `String`   | Override shadow color for this presentation.                                   |
+| `shadowOffset`    | `Object`   | Override shadow offset (`{x, y}`) for this presentation.                       |
 | `backgroundColor`  | `String`   | Override background color for this presentation.                               |
 | `showsArrow`      | `Boolean`  | Override: show/hide arrow for this presentation.                               |
 | `showsDimBackground` | `Boolean` | Override: dim background for this presentation.                                |
@@ -407,8 +411,10 @@ var popover = ti_popover.createPopover({
     cornerRadius: 16,
     borderWidth: 2,
     borderColor: '#3498db',
+    shadowColor: '#000000',
     shadowRadius: 10,
     shadowOpacity: 0.4,
+    shadowOffset: { x: 0, y: 6 },
     arrowWidth: 40,
     arrowHeight: 20,
     transitionStyle: ti_popover.TRANSITION_STYLE_TRANSLATE
@@ -1112,6 +1118,7 @@ The popover is **not** based on `UIPopoverPresentationController`. Instead, it i
 - Handles outside taps via a `UITapGestureRecognizer` on the container view
 - Animates presentation/dismissal with `UIView` animations (spring-scale, fade, translate)
 - Applies blur via `UIVisualEffectView` for both the popover body and the background
+- Uses a **shadow carrier** architecture: the shadow is applied to an unmasked `_shadowView` that contains the masked popover container, so the shadow is never clipped by the popover mask and animates in perfect sync with the content
 
 This approach provides maximum visual control and consistent behavior across all iOS versions and device sizes (iPhone and iPad).
 

@@ -91,6 +91,7 @@ popover.show({
 - **keyWindow deprecation fix** — Updated to use `connectedScenes` iteration for iOS 17+ compatibility
 - **Clamping logic** — Improved edge detection with 10px threshold before falling back to centered positioning
 - **Background animation timing** — Background/blur animations use 75% of main animation duration for polished feel
+- **Shadow carrier architecture** — Shadow is now applied to an unmasked `_shadowView` that contains the masked popover container, preventing clipping and ensuring the shadow animates in perfect sync with the popover content across all transition styles
 
 ---
 
@@ -152,6 +153,8 @@ popover.show({ view: button, rect: { x: 50, y: 20 } });
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `transitionDuration` | `Number` | `0` (auto) | Animation duration in seconds (0.0–1.0) |
+| `shadowColor` | `String` | `'#000000'` | Shadow color (hex string) |
+| `shadowOffset` | `Object` | `{x:0, y:0}` | Shadow offset `{x, y}` in DIP |
 
 ### Methods
 
