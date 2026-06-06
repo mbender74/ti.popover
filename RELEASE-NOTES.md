@@ -1,6 +1,6 @@
 # Release Notes — ti.popover v2.0.1
 
-**Release Date:** 2025-01-XX  
+**Release Date:** 2026-06-06  
 **Platform:** iOS  
 **Module ID:** `ti.popover`
 
@@ -8,15 +8,51 @@
 
 ## 🎉 What's New
 
-Version 2.0.0 brings major enhancements to the ti.popover module with extended corner-anchored arrow directions, customizable animation durations, device rotation support, and a completely rewritten documentation.
+Version 2.0.1 is a maintenance release that fixes shadow animation synchronization and eliminates duplicate events.
 
 ---
 
-## ✨ New Features
+## 🐛 Bug Fixes
+
+### Shadow Animation Sync
+
+The shadow now animates in perfect sync with the popover content across all transition styles (scale, fade, translate). Previously the shadow would appear instantly or lag behind the popover animation.
+
+**Fix:** Shadow is now applied to an unmasked `_shadowView` that contains the masked popover container, preventing clipping and ensuring the shadow transforms together with the content.
+
+### Duplicate `hide` Event on Outside Tap
+
+Tapping outside the popover to dismiss no longer fires the `hide` event twice.
+
+---
+
+## ✨ New Features (since v2.0.0)
+
+### Shadow Color (`shadowColor`)
+
+Customize the shadow color with any hex string:
+
+```javascript
+var popover = ti_popover.createPopover({
+    contentView: contentView,
+    shadowColor: '#ff0000'  // Red shadow
+});
+```
+
+### Shadow Offset (`shadowOffset`)
+
+Offset the shadow independently from the popover:
+
+```javascript
+var popover = ti_popover.createPopover({
+    contentView: contentView,
+    shadowOffset: { x: 0, y: 6 }
+});
+```
 
 ### Extended Arrow Directions (Corner-Anchored)
 
-8 new arrow direction constants position the arrow at a specific corner with the popover extending away from that edge:
+8 arrow direction constants position the arrow at a specific corner with the popover extending away from that edge:
 
 - `ARROW_DIRECTION_RIGHT_TOP` — Arrow at top-right, popover extends down
 - `ARROW_DIRECTION_RIGHT_BOTTOM` — Arrow at bottom-right, popover extends up
@@ -91,7 +127,6 @@ popover.show({
 - **keyWindow deprecation fix** — Updated to use `connectedScenes` iteration for iOS 17+ compatibility
 - **Clamping logic** — Improved edge detection with 10px threshold before falling back to centered positioning
 - **Background animation timing** — Background/blur animations use 75% of main animation duration for polished feel
-- **Shadow carrier architecture** — Shadow is now applied to an unmasked `_shadowView` that contains the masked popover container, preventing clipping and ensuring the shadow animates in perfect sync with the popover content across all transition styles
 
 ---
 
@@ -124,7 +159,7 @@ In v1.x, the `rect` property in `show()` was interpreted as absolute parent-coor
 popover.show({ view: button, rect: { x: 100, y: 200, width: 50, height: 50 } });
 ```
 
-**v2.0.0 (relative offset):**
+**v2.0.0+ (relative offset):**
 ```javascript
 // Offset 50px right and 20px down from button's position
 popover.show({ view: button, rect: { x: 50, y: 20 } });
@@ -148,7 +183,7 @@ popover.show({ view: button, rect: { x: 50, y: 20 } });
 **Blur Styles:**
 `BLUR_STYLE_LIGHT`, `BLUR_STYLE_DARK`, `BLUR_STYLE_EXTRA_LIGHT`
 
-### New Properties
+### Properties
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -166,18 +201,12 @@ popover.show({ view: button, rect: { x: 50, y: 20 } });
 
 ## 🚀 Upgrade Guide
 
-Upgrading from v1.x to v2.0.0:
+Upgrading from v1.x to v2.0.1:
 
 1. Update `tiapp.xml`: `<module version="2.0.1">ti.popover</module>`
 2. Review `rect` usage in `show()` calls — change from absolute to relative coordinates
 3. Optional: Use new extended arrow directions for corner-anchored popovers
 4. Optional: Customize animation speed with `transitionDuration`
-
----
-
-## 🐛 Known Issues
-
-None at this time.
 
 ---
 
