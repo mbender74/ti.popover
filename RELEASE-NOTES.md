@@ -1,4 +1,4 @@
-# Release Notes — ti.popover v2.0.0
+# Release Notes — ti.popover v2.0.1
 
 **Release Date:** 2025-01-XX  
 **Platform:** iOS  
@@ -168,7 +168,7 @@ popover.show({ view: button, rect: { x: 50, y: 20 } });
 
 Upgrading from v1.x to v2.0.0:
 
-1. Update `tiapp.xml`: `<module version="2.0.0">ti.popover</module>`
+1. Update `tiapp.xml`: `<module version="2.0.1">ti.popover</module>`
 2. Review `rect` usage in `show()` calls — change from absolute to relative coordinates
 3. Optional: Use new extended arrow directions for corner-anchored popovers
 4. Optional: Customize animation speed with `transitionDuration`

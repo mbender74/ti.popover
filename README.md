@@ -5,7 +5,7 @@ A fully custom iOS Popover module implementation for Titanium Mobile.
 Draws its own arrow and border using `UIBezierPath`, positions itself relative to a source view, and handles dismiss via tap gesture. Designed to mirror the [Titanium `Ti.UI.iPad.Popover`](https://titaniumsdk.com/api/titanium/ui/ipad/popover.html) API while adding extensive appearance customization.
 
 **Platform:** iOS only  
-**Version:** 2.0.0  
+**Version:** 2.0.1  
 **Module ID:** `ti.popover`
 
 📖 **Full Documentation:** [documentation/index.md](documentation/index.md)
@@ -33,11 +33,11 @@ Draws its own arrow and border using `UIBezierPath`, positions itself relative t
 
 ## Installation
 
-1. Copy the module zip (`ios/dist/ti.popover-iphone-2.0.0.zip`) to your project's `tiapp.xml`:
+1. Copy the module zip (`ios/dist/ti.popover-iphone-2.0.1.zip`) to your project's `tiapp.xml`:
 
 ```xml
 <modules>
-    <module version="2.0.0">ti.popover</module>
+    <module version="2.0.1">ti.popover</module>
 </modules>
 ```
 
@@ -45,7 +45,7 @@ Draws its own arrow and border using `UIBezierPath`, positions itself relative t
 
 ```xml
 <Alloy>
-    <Module id="ti.popover" version="2.0.0" />
+    <Module id="ti.popover" version="2.0.1" />
 </Alloy>
 ```
 
